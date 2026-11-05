@@ -46,7 +46,11 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 impl Shared {
-    fn send(&self, output: &Output) {
+    /// Runs `f` on the engine and writes its output while still holding the engine lock,
+    /// so bytes leave Out in engine order. Lock order is always engine, then out.
+    fn run(&self, f: impl FnOnce(&mut Engine, u64) -> Output) {
+        let mut engine = lock(&self.engine);
+        let output = f(&mut engine, self.clock.now_us());
         if output.send.is_empty() {
             return;
         }
@@ -61,15 +65,11 @@ impl Shared {
     }
 
     fn on_midi(&self, msg: &[u8]) {
-        let now = self.clock.now_us();
-        let output = lock(&self.engine).on_midi(now, msg);
-        self.send(&output);
+        self.run(|e, now| e.on_midi(now, msg));
     }
 
     fn on_tick(&self) {
-        let now = self.clock.now_us();
-        let output = lock(&self.engine).on_tick(now);
-        self.send(&output);
+        self.run(Engine::on_tick);
     }
 
     /// How long the timer thread may sleep.
@@ -195,10 +195,7 @@ impl Bridge {
     }
 
     pub fn command(&self, cmd: Command) {
-        let shared = &self.inner.shared;
-        let now = shared.clock.now_us();
-        let output = lock(&shared.engine).on_command(now, cmd);
-        shared.send(&output);
+        self.inner.shared.run(|e, now| e.on_command(now, cmd));
     }
 
     #[must_use]
