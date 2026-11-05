@@ -94,7 +94,8 @@ fn tray_image(frame: TrayFrame) -> Option<Image<'static>> {
     let bytes: &'static [u8] = match frame {
         TrayFrame::GreenOn => include_bytes!("../icons/tray/vinyl-green-on@2x.png"),
         TrayFrame::GreenDim => include_bytes!("../icons/tray/vinyl-green-dim@2x.png"),
-        TrayFrame::Red => include_bytes!("../icons/tray/vinyl-red@2x.png"),
+        TrayFrame::RedOn => include_bytes!("../icons/tray/vinyl-red-on@2x.png"),
+        TrayFrame::RedDim => include_bytes!("../icons/tray/vinyl-red-dim@2x.png"),
     };
     Image::from_bytes(bytes).ok()
 }
@@ -105,12 +106,7 @@ fn update_tray(app: &AppHandle, dto: &StateDto, state: &mut TrayState) {
         state.last_beats = dto.input_beats;
         state.last_beat_change_us = now_us;
     }
-    let frame = tray::tray_frame(
-        dto.in_ok,
-        dto.input_beats,
-        state.last_beat_change_us,
-        now_us,
-    );
+    let frame = tray::tray_frame(dto.in_ok, dto.out_ok, state.last_beat_change_us, now_us);
     let title = tray::tray_title(dto.bpm);
     let Some(tray) = app.tray_by_id(TRAY_ID) else {
         return;
@@ -171,7 +167,7 @@ fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(BlurHide::default());
     spawn_emitter(app.handle().clone(), bridge);
 
-    let icon = tray_image(TrayFrame::Red).ok_or("tray icon is not a valid PNG")?;
+    let icon = tray_image(TrayFrame::RedOn).ok_or("tray icon is not a valid PNG")?;
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(icon)
         .icon_as_template(false)

@@ -1,6 +1,6 @@
 //! Menu bar presentation: which icon frame and which title to show.
 
-/// How long the signal dot stays bright after an input beat.
+/// How long the dot stays bright after an input beat.
 const BLINK_US: u64 = 120_000;
 
 /// Figure space, as wide as a digit, to keep the title width steady.
@@ -10,23 +10,23 @@ const FIGURE_SPACE: char = '\u{2007}';
 pub enum TrayFrame {
     GreenOn,
     GreenDim,
-    Red,
+    RedOn,
+    RedDim,
 }
 
-/// Picks the icon frame: red without signal, bright green for 120 ms after a beat, else dim green.
+/// Picks the icon frame. Colour follows the output (green when sending, red otherwise); the blink
+/// follows the input (bright for 120 ms after a beat, else dim). Without input it is a steady red.
 #[must_use]
-pub fn tray_frame(
-    in_ok: bool,
-    _input_beats: u64,
-    last_beat_change_us: u64,
-    now_us: u64,
-) -> TrayFrame {
+pub fn tray_frame(in_ok: bool, out_ok: bool, last_beat_change_us: u64, now_us: u64) -> TrayFrame {
     if !in_ok {
-        TrayFrame::Red
-    } else if now_us.saturating_sub(last_beat_change_us) < BLINK_US {
-        TrayFrame::GreenOn
-    } else {
-        TrayFrame::GreenDim
+        return TrayFrame::RedOn;
+    }
+    let bright = now_us.saturating_sub(last_beat_change_us) < BLINK_US;
+    match (out_ok, bright) {
+        (true, true) => TrayFrame::GreenOn,
+        (true, false) => TrayFrame::GreenDim,
+        (false, true) => TrayFrame::RedOn,
+        (false, false) => TrayFrame::RedDim,
     }
 }
 
@@ -45,17 +45,33 @@ pub fn tray_title(bpm: Option<f64>) -> String {
 mod tests {
     use super::*;
 
+    const T0: u64 = 5_000_000;
+
     #[test]
-    fn red_without_signal() {
-        assert_eq!(tray_frame(false, 10, 1_000, 1_000), TrayFrame::Red);
+    fn red_steady_without_input() {
+        assert_eq!(tray_frame(false, true, T0, T0), TrayFrame::RedOn);
+        assert_eq!(tray_frame(false, true, T0, T0 + 121_000), TrayFrame::RedOn);
+        assert_eq!(
+            tray_frame(false, false, T0, T0 + 5_000_000),
+            TrayFrame::RedOn
+        );
     }
 
     #[test]
-    fn green_on_right_after_beat_then_dim() {
-        let t0 = 5_000_000;
-        assert_eq!(tray_frame(true, 3, t0, t0), TrayFrame::GreenOn);
-        assert_eq!(tray_frame(true, 3, t0, t0 + 119_000), TrayFrame::GreenOn);
-        assert_eq!(tray_frame(true, 3, t0, t0 + 121_000), TrayFrame::GreenDim);
+    fn red_blinks_when_receiving_but_paused() {
+        assert_eq!(tray_frame(true, false, T0, T0), TrayFrame::RedOn);
+        assert_eq!(tray_frame(true, false, T0, T0 + 119_000), TrayFrame::RedOn);
+        assert_eq!(tray_frame(true, false, T0, T0 + 121_000), TrayFrame::RedDim);
+    }
+
+    #[test]
+    fn green_blinks_when_sending() {
+        assert_eq!(tray_frame(true, true, T0, T0), TrayFrame::GreenOn);
+        assert_eq!(tray_frame(true, true, T0, T0 + 119_000), TrayFrame::GreenOn);
+        assert_eq!(
+            tray_frame(true, true, T0, T0 + 121_000),
+            TrayFrame::GreenDim
+        );
     }
 
     #[test]

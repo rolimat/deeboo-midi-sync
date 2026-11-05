@@ -13,7 +13,7 @@ Download the `.dmg` from the GitHub Releases page. The app is unsigned, so macOS
    `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`
 
 ## Usage
-1. In your DJ software or DAW (the master), point the MIDI clock output at `Deeboo Clock Sync In`; the menu bar shows the BPM and a green dot.
+1. In your DJ software or DAW (the master), point the MIDI clock output at `Deeboo Clock Sync In`; the menu bar shows the BPM and a blinking dot: red blinking means clock is arriving, green blinking means Deeboo is sending it on (Play). A steady red dot means no input clock.
 2. Point the slave's clock input at `Deeboo Clock Sync Out`.
 3. Press Play on beat 1 of the phrase to start the slave. Hold `◀◀` or `▶▶` to nudge it slower or faster; release to return to 1:1.
 4. Ports, nudge strength and launch at login are in Settings (⚙).

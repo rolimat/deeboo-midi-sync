@@ -31,7 +31,7 @@ dispositivo puede conectarse a In/Out.
 3. **Play/Pausa** del reenvío.
 4. **Empuje fino** (Push ▶▶ / Slow down ◀◀) mientras se mantiene pulsado.
 5. Mostrar **BPM** medido, **beat 1–4** de la salida, y estado de In/Out.
-6. Icono en la barra de menú con indicador de señal parpadeando al beat y BPM.
+6. Icono en la barra de menú con punto parpadeando al beat de entrada (color según Out) y BPM.
 7. Distribución como **`.dmg`** sin firmar.
 8. Desarrollo contenido en Docker con linters, tests, hooks y CI.
 
@@ -116,6 +116,8 @@ justo ahí, y afinar con ◀◀ / ▶▶.
 | In | Llegan pulsos de clock (último hace < 500 ms) | Sin señal o puerto no creado |
 | Out | En Play, puerto creado y reenviando | En Pausa, o puerto no creado |
 
+El punto de la barra de menú (§6.1) combina ambos: color de Out, parpadeo de In.
+
 ## 6. Interfaz
 
 Todos los textos de la app en **inglés**. Mockup aprobado: `.superpowers/brainstorm/…/content/layout-v3.html`
@@ -127,9 +129,11 @@ Todos los textos de la app en **inglés**. Mockup aprobado: `.superpowers/brains
 
 - Icono: **vinilo** (opción A elegida: disco con surcos y marca de agarre), monocromo y
   legible en barra clara y oscura.
-- Punto: **verde** si In recibe señal, **rojo** si no. Parpadea una vez por **beat de entrada**
-  (cada 24 pulsos recibidos) *(decisión del diseñador: el parpadeo refleja la señal de In)*.
-  Sin señal: rojo fijo.
+- Punto: el **color** refleja Out y el **parpadeo** refleja In *(cambiado 2026-11-05 a petición
+  del usuario)*. Verde si Deeboo está en Play y el puerto Out está bien; rojo en cualquier otro
+  caso. Mientras llega clock de In, parpadea una vez por **beat de entrada** (cada 24 pulsos
+  recibidos: brillante 120 ms, luego atenuado). Sin clock de In: rojo fijo, sin parpadeo.
+  Cuatro fotogramas: verde encendido/atenuado, rojo encendido/atenuado.
 - BPM con 1 decimal, ancho de dígitos fijo (no "baila"); `—` sin señal.
 - Clic → abre/cierra el popover. Implementación sugerida: icono compuesto en tiempo de
   ejecución (vinilo + punto) en variantes encendido/atenuado × verde/rojo, y BPM con
@@ -243,11 +247,11 @@ deben ir en Docker se ejecutan vía `docker compose run` si no se está ya dentr
 ## 10. Pruebas de aceptación (manuales, en macOS)
 
 1. Con la app abierta, `Deeboo Clock Sync In` y `Deeboo Clock Sync Out` aparecen como puertos MIDI en otros programas.
-2. Maestro enviando clock a 124 BPM → la barra muestra `124.0` y el punto verde parpadea.
-3. Play → el esclavo arranca y sigue el tempo; Pausa → el esclavo se para.
+2. Maestro enviando clock a 124 BPM → la barra muestra `124.0` y el punto parpadea en rojo (recibiendo, en Pausa).
+3. Play → el punto parpadea en verde, el esclavo arranca y sigue el tempo; Pausa → el esclavo se para.
 4. Mantener ▶▶ un segundo → el esclavo se adelanta; al soltar, mantiene el mismo tempo que el
    maestro. Igual para ◀◀ en sentido contrario.
-5. Cortar el clock del maestro → In y punto en rojo en menos de 1 s.
+5. Cortar el clock del maestro → In y punto en rojo fijo en menos de 1 s.
 6. Renombrar puertos en Settings → los nuevos nombres aparecen en otros programas.
 7. Instalar desde el `.dmg` en un Mac limpio siguiendo el README.
 8. Stop en el maestro → el esclavo se para y Deeboo pasa a Pausa. Start en el maestro → el

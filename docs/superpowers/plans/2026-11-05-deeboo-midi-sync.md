@@ -20,7 +20,7 @@
 - BPM is shown with 1 decimal place. With no signal it is shown as `—`.
 - Only Deeboo's Play starts the slave. Incoming `Start`/`Continue`/`SPP` are **never** forwarded. Incoming `Stop` while playing → forward `Stop` and pause. Clock loss while playing → send `Stop` and pause. Deeboo starts **paused**.
 - Popover buttons are icon-only: `◀◀`, `▶`/`⏸`, `▶▶`. Port rows show only a green/red dot and `In · <name>` / `Out · <name>`.
-- Menu bar shows `[vinyl icon][dot] 124.0`. The dot is green with input signal and red without. It blinks once per **input** beat (every 24 received pulses).
+- Menu bar shows `[vinyl icon][dot] 124.0`. The dot colour follows **output** (green when Deeboo is playing and Out is OK, red otherwise) and it blinks once per **input** beat (every 24 received pulses) only while input clock arrives; with no input it is steady red. (changed 2026-11-05 at user request)
 - No Dock icon (`ActivationPolicy::Accessory` + `LSUIElement`).
 - No code signing or notarization. The `.dmg` is built by `tauri build`.
 - Plain CSS with custom properties. No CSS framework, no UI framework.
@@ -526,7 +526,7 @@ export const api: { play(): Promise<void>; pause(): Promise<void>; nudgeStart(d:
 ### Task 10: Menu bar icon: vinyl, signal dot, beat blink, BPM title
 
 **Files:**
-- Create: `src-tauri/src/tray.rs`, the tray frame PNGs in `src-tauri/icons/tray/` (`vinyl-green-on.png`, `vinyl-green-dim.png`, `vinyl-red.png`, each at @1x 22 px tall and @2x), and the source SVG `src-tauri/icons/tray/vinyl.svg`
+- Create: `src-tauri/src/tray.rs`, the tray frame PNGs in `src-tauri/icons/tray/` (`vinyl-green-on.png`, `vinyl-green-dim.png`, `vinyl-red-on.png`, `vinyl-red-dim.png`, each at @1x 22 px tall and @2x), and the source SVG `src-tauri/icons/tray/vinyl.svg`
 - Modify: `src-tauri/src/lib.rs`
 
 **Interfaces:**
@@ -534,8 +534,8 @@ export const api: { play(): Promise<void>; pause(): Promise<void>; nudgeStart(d:
 - Produces:
 
 ```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum TrayFrame { GreenOn, GreenDim, Red }
-pub fn tray_frame(in_ok: bool, input_beats: u64, last_beat_change_us: u64, now_us: u64) -> TrayFrame; // GreenOn for 120 ms after a beat change
+#[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum TrayFrame { GreenOn, GreenDim, RedOn, RedDim }
+pub fn tray_frame(in_ok: bool, out_ok: bool, last_beat_change_us: u64, now_us: u64) -> TrayFrame; // colour from out_ok, bright for 120 ms after an input beat, steady RedOn without input (changed 2026-11-05)
 pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", None → "—"
 ```
 
@@ -544,8 +544,7 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
 - The ~30 Hz emitter thread from Task 8 also updates the tray. It calls `set_icon` only when the frame changes and `set_title` only when the title changes. The title uses a figure-space-padded format so the width does not jump.
 
 - [ ] **Step 1: Write failing tests** in `tray.rs`:
-  - `red_without_signal`.
-  - `green_on_right_after_beat_then_dim`: at +0 ms → `GreenOn`, at +119 ms → `GreenOn`, at +121 ms → `GreenDim`.
+  - `red_steady_without_input`, `red_blinks_when_receiving_but_paused`, `green_blinks_when_sending`: bright at +0/+119 ms, dim at +121 ms.
   - `title_formats_one_decimal_and_dash`: 124.04 → `"124.0"`, 99.96 → `"100.0"`, None → `"—"`.
 - [ ] **Step 2: Run** `just test`. Expected: FAIL. Implement it, then run again. Expected: PASS.
 - [ ] **Step 3:** Produce the PNG frames from `vinyl.svg` (any one-off tool; commit the PNGs, not the tool) and wire up the updater.

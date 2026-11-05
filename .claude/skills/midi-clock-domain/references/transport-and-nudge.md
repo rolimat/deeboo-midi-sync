@@ -30,5 +30,5 @@ At 4 % and 125 BPM: 100 input pulses give 104 (Push) or 96 (Slow) outputs; the e
 - Nudge commands while paused are ignored and leave no deadline.
 - The UI must send `NudgeStop` on pointerup, pointerleave and window blur, and the popover hiding
   does the same in Rust; otherwise the slave drifts forever.
-- Input beats (`input_beats`, received pulses / 24) drive the menu bar blink; the displayed beat
+- Input beats (`input_beats`, received pulses / 24) drive the menu bar dot blink (its colour follows `out_ok`: green playing, red otherwise; steady red without input); the displayed beat
   1-4 counts output pulses.
