@@ -48,7 +48,6 @@ impl BpmMeter {
     }
 
     /// Mean pulse interval in µs, `None` with fewer than two pulses.
-    #[allow(dead_code)] // used by nudge (task 5)
     pub(crate) fn interval_us(&self) -> Option<u64> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // positive, small
         self.mean_us().map(|m| m.round() as u64)

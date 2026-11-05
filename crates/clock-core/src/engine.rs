@@ -6,6 +6,7 @@ use crate::{PPQN, SIGNAL_TIMEOUT_US};
 const CLOCK: u8 = 0xF8;
 const START: u8 = 0xFA;
 const STOP: u8 = 0xFC;
+const NUDGE_THRESHOLD: u32 = 10_000;
 
 /// Nudge direction: `Push` inserts a pulse, `Slow` drops one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,11 +52,12 @@ pub struct Engine {
     play_started_us: u64,
     out_pulses: u64,
     /// Nudge strength in hundredths of a percent.
-    #[allow(dead_code)] // used by nudge (task 5)
     strength_hundredths: u32,
-    /// Nudge accumulator, integer fixed-point, threshold `10_000`.
-    #[allow(dead_code)] // used by nudge (task 5)
-    nudge_acc: i64,
+    /// Nudge accumulator, integer fixed-point, threshold `NUDGE_THRESHOLD`.
+    nudge_acc: u32,
+    nudge: Option<Direction>,
+    /// When the inserted extra pulse is due.
+    pending_extra_us: Option<u64>,
 }
 
 impl Engine {
@@ -72,6 +74,8 @@ impl Engine {
             out_pulses: 0,
             strength_hundredths,
             nudge_acc: 0,
+            nudge: None,
+            pending_extra_us: None,
         }
     }
 
@@ -83,19 +87,46 @@ impl Engine {
             match b {
                 CLOCK => {
                     self.on_clock(now_us);
-                    if self.playing {
+                    if self.playing && self.nudge_forwards(now_us) {
                         self.out_pulses += 1;
                         out.send.push(CLOCK);
                     }
                 }
                 STOP if self.playing => {
-                    self.playing = false;
+                    self.pause();
                     out.send.push(STOP);
                 }
                 _ => {}
             }
         }
         out
+    }
+
+    /// Applies the nudge to one incoming pulse; `false` means the pulse is dropped.
+    fn nudge_forwards(&mut self, now_us: u64) -> bool {
+        let Some(dir) = self.nudge else { return true };
+        self.nudge_acc += self.strength_hundredths;
+        if self.nudge_acc < NUDGE_THRESHOLD {
+            return true;
+        }
+        self.nudge_acc -= NUDGE_THRESHOLD;
+        match dir {
+            Direction::Push => {
+                if let Some(iv) = self.meter.interval_us() {
+                    self.pending_extra_us = Some(now_us + iv / 2);
+                }
+                true
+            }
+            Direction::Slow => false,
+        }
+    }
+
+    /// Leaves the playing state and cancels any nudge.
+    fn pause(&mut self) {
+        self.playing = false;
+        self.pending_extra_us = None;
+        self.nudge_acc = 0;
+        self.nudge = None;
     }
 
     fn on_clock(&mut self, now_us: u64) {
@@ -119,29 +150,57 @@ impl Engine {
                 Output { send: vec![START] }
             }
             Command::Pause if self.playing => {
-                self.playing = false;
+                self.pause();
                 Output { send: vec![STOP] }
+            }
+            Command::NudgeStart(d) if self.playing => {
+                self.nudge = Some(d);
+                Output::default()
+            }
+            Command::NudgeStop if self.playing => {
+                self.nudge = None;
+                self.nudge_acc = 0;
+                Output::default()
+            }
+            Command::SetNudgeStrength(p) if (1.0..=10.0).contains(&p) => {
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 100..=1000
+                {
+                    self.strength_hundredths = (p * 100.0).round() as u32;
+                }
+                Output::default()
             }
             _ => Output::default(),
         }
     }
 
-    /// Sends one `Stop` and pauses when the clock was lost while playing.
+    /// Sends one `Stop` and pauses when the clock was lost while playing,
+    /// otherwise emits a due nudge pulse.
     pub fn on_tick(&mut self, now_us: u64) -> Output {
-        match self.next_deadline_us() {
-            Some(d) if now_us > d => {
-                self.playing = false;
-                Output { send: vec![STOP] }
-            }
-            _ => Output::default(),
+        if self.loss_deadline_us().is_some_and(|d| now_us > d) {
+            self.pause();
+            return Output { send: vec![STOP] };
         }
+        if self.pending_extra_us.is_some_and(|p| p <= now_us) {
+            self.pending_extra_us = None;
+            self.out_pulses += 1;
+            return Output { send: vec![CLOCK] };
+        }
+        Output::default()
     }
 
     /// While playing: when signal loss will be declared. `None` while paused.
-    #[must_use]
-    pub fn next_deadline_us(&self) -> Option<u64> {
+    fn loss_deadline_us(&self) -> Option<u64> {
         self.playing
             .then(|| self.last_clock_us.unwrap_or(0).max(self.play_started_us) + SIGNAL_TIMEOUT_US)
+    }
+
+    /// The earlier of the pending nudge pulse and the signal-loss deadline.
+    #[must_use]
+    pub fn next_deadline_us(&self) -> Option<u64> {
+        match (self.pending_extra_us, self.loss_deadline_us()) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (a, b) => a.or(b),
+        }
     }
 
     #[must_use]
