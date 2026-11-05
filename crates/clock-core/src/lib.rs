@@ -1,5 +1,10 @@
 //! Pure MIDI clock logic. No I/O, no threads: time is always passed in.
 
+mod bpm;
+mod engine;
+
+pub use engine::{Command, Direction, Engine, Output, State};
+
 /// MIDI clock pulses per quarter note.
 pub const PPQN: u64 = 24;
 
