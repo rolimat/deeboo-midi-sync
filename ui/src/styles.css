@@ -8,6 +8,7 @@
   --beat-on: #ff7a3d;
   --beat-one: #ff3d3d;
   --green: #2fb36b;
+  --green-dark: #1f6b43;
   --red: #e5484d;
   --quit-bg: #3a2226;
   --quit-text: #ff8c8c;
@@ -34,7 +35,6 @@ body {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  min-height: 100vh;
 }
 
 .header {
@@ -128,7 +128,18 @@ button {
 }
 
 .btn.play {
+  background: var(--green-dark);
+  color: var(--text);
+}
+
+.btn.play.playing {
   background: var(--green);
+  color: var(--bg);
+}
+
+.btn.active {
+  background: var(--beat-on);
+  box-shadow: 0 0 10px var(--beat-on);
   color: var(--bg);
 }
 

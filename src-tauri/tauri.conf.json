@@ -16,7 +16,7 @@
         "label": "popover",
         "title": "Deeboo MIDI Sync",
         "width": 340,
-        "height": 420,
+        "height": 330,
         "visible": false,
         "decorations": false,
         "transparent": true,

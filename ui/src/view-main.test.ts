@@ -126,3 +126,30 @@ it("port_rows_show_names_only", () => {
   view.setSettings({ ...settings, inputName: "X" });
   expect(root.textContent).toContain("In · X");
 });
+
+it("nudge_button_lit_while_held", () => {
+  view.update({ ...base, playing: true });
+  const push = btn("Push");
+  push.dispatchEvent(new Event("pointerdown"));
+  expect(push.classList.contains("active")).toBe(true);
+  push.dispatchEvent(new Event("pointerup"));
+  expect(push.classList.contains("active")).toBe(false);
+});
+
+it("nudge_button_unlit_on_pointerleave", () => {
+  view.update({ ...base, playing: true });
+  const slow = btn("Slow down");
+  slow.dispatchEvent(new Event("pointerdown"));
+  expect(slow.classList.contains("active")).toBe(true);
+  slow.dispatchEvent(new Event("pointerleave"));
+  expect(slow.classList.contains("active")).toBe(false);
+});
+
+it("play_button_dark_green_when_paused", () => {
+  const play = root.querySelector(".play") as HTMLElement;
+  expect(play.classList.contains("playing")).toBe(false);
+  view.update({ ...base, playing: true });
+  expect(play.classList.contains("playing")).toBe(true);
+  view.update({ ...base, playing: false });
+  expect(play.classList.contains("playing")).toBe(false);
+});

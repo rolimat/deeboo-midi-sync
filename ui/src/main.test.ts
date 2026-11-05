@@ -14,6 +14,8 @@ vi.mock("./api", () => ({
   },
 }));
 
+vi.mock("./fit-window", () => ({ fitWindowToPanel: vi.fn() }));
+
 beforeEach(() => {
   vi.resetModules();
   document.body.innerHTML = '<div id="app"></div>';

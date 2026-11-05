@@ -19,9 +19,12 @@ export function mountMain(
   beatRow.append(...beats);
 
   let active = false;
+  const held = new Set<HTMLElement>();
   const stopNudge = (): void => {
     if (!active) return;
     active = false;
+    held.forEach((b) => b.classList.remove("active"));
+    held.clear();
     void api.nudgeStop();
   };
   const nudgeBtn = (icon: string, label: string, dir: Direction): HTMLButtonElement => {
@@ -30,6 +33,8 @@ export function mountMain(
     b.addEventListener("pointerdown", () => {
       if (b.disabled) return;
       active = true;
+      b.classList.add("active");
+      held.add(b);
       void api.nudgeStart(dir);
     });
     b.addEventListener("pointerup", stopNudge);
@@ -80,6 +85,7 @@ export function mountMain(
         c.classList.toggle("one", lit && i === 0);
       });
       playing = s.playing;
+      play.classList.toggle("playing", playing);
       play.textContent = playing ? "⏸" : "▶";
       play.setAttribute("aria-label", playing ? "Pause" : "Play");
       slow.disabled = !playing;

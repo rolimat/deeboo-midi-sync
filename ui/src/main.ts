@@ -1,5 +1,6 @@
 import "./styles.css";
 import { api } from "./api";
+import { fitWindowToPanel } from "./fit-window";
 import { mountMain } from "./view-main";
 import { mountSettings } from "./view-settings";
 
@@ -29,4 +30,7 @@ async function boot(root: HTMLElement): Promise<void> {
 }
 
 const root = document.getElementById("app");
-if (root) void boot(root);
+if (root) {
+  fitWindowToPanel(root);
+  void boot(root);
+}
