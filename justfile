@@ -10,6 +10,7 @@ fmt:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -n "${DEEBOO_IN_CONTAINER:-}" ] || exec {{docker}} fmt
+    just ui-deps
     cargo fmt --all
     if [ -f ui/package.json ]; then npm --prefix ui run format; fi
 
@@ -17,6 +18,7 @@ fmt-check:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -n "${DEEBOO_IN_CONTAINER:-}" ] || exec {{docker}} fmt-check
+    just ui-deps
     cargo fmt --all --check
     if [ -f ui/package.json ]; then npm --prefix ui run format:check; fi
 
@@ -24,6 +26,7 @@ lint:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -n "${DEEBOO_IN_CONTAINER:-}" ] || exec {{docker}} lint
+    just ui-dist
     cargo clippy --workspace --all-targets -- -D warnings
     cargo deny check
     hadolint docker/Dockerfile
@@ -34,8 +37,19 @@ test:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -n "${DEEBOO_IN_CONTAINER:-}" ] || exec {{docker}} test
+    just ui-dist
     cargo test --workspace
     if [ -f ui/package.json ]; then npm --prefix ui test -- --run; fi
+
+# Builds ui/dist: tauri::generate_context! needs it before cargo compiles src-tauri.
+ui-dist: ui-deps
+    npm --prefix ui run build
+
+# Installs ui/node_modules when empty (the Docker volume starts empty).
+ui-deps:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "$(ls -A ui/node_modules 2>/dev/null)" ]; then npm --prefix ui ci; fi
 
 precommit:
     #!/usr/bin/env bash
@@ -51,13 +65,15 @@ dev:
     #!/usr/bin/env bash
     set -euo pipefail
     [ "$(uname)" = Darwin ] || { echo "just dev runs on the macOS host only" >&2; exit 1; }
-    cargo tauri dev
+    if [ ! -f ui/node_modules/.bin/tauri ]; then npm --prefix ui ci; fi
+    npm --prefix ui run tauri dev
 
 dmg:
     #!/usr/bin/env bash
     set -euo pipefail
     [ "$(uname)" = Darwin ] || { echo "just dmg runs on the macOS host only" >&2; exit 1; }
-    cargo tauri build
+    if [ ! -f ui/node_modules/.bin/tauri ]; then npm --prefix ui ci; fi
+    npm --prefix ui run tauri build -- --bundles dmg
 
 jitter:
     #!/usr/bin/env bash

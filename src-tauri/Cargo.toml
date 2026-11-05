@@ -1,0 +1,22 @@
+[package]
+name = "deeboo-midi-sync"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Menu bar app that relays MIDI clock with Play/Pause and nudge"
+
+[lib]
+name = "deeboo_midi_sync_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-positioner = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+log = "0.4"

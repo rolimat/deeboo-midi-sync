@@ -18,6 +18,8 @@ Spec §9: [docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md](../../.
 | `just lint` | clippy `-D warnings`, `cargo deny`, hadolint, `scripts/check-agent-docs.sh`, UI eslint + typecheck |
 | `just test` | `cargo test --workspace`; Vitest when `ui/package.json` exists |
 | `just precommit` (`check`) | fmt-check + lint + test |
+| `just dev` / `just dmg` | macOS only: `npm --prefix ui run tauri dev` / `tauri build -- --bundles dmg` (run `npm ci` first if `ui/node_modules` is missing) |
+| `just ui-dist` | builds `ui/dist`; `lint` and `test` run it first because `tauri::generate_context!` needs it |
 | `just ship` | push and wait for the CI run of this exact commit |
 
 UI steps are guarded by `[ -f ui/package.json ]`, so they appear once the UI exists.

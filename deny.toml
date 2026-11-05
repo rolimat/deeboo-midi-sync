@@ -1,5 +1,9 @@
 [advisories]
 version = 2
+ignore = [
+  # Transitive via gtk3-macros (Linux-only Tauri backend); the macOS app never links it.
+  { id = "RUSTSEC-2024-0370", reason = "unmaintained proc-macro-error pulled in by gtk3 on Linux only" },
+]
 
 [licenses]
 version = 2
