@@ -4,6 +4,8 @@ use crate::bpm::BpmMeter;
 use crate::{PPQN, SIGNAL_TIMEOUT_US};
 
 const CLOCK: u8 = 0xF8;
+const START: u8 = 0xFA;
+const STOP: u8 = 0xFC;
 
 /// Nudge direction: `Push` inserts a pulse, `Slow` drops one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,6 +48,7 @@ pub struct Engine {
     last_clock_us: Option<u64>,
     input_pulses: u64,
     playing: bool,
+    play_started_us: u64,
     out_pulses: u64,
     /// Nudge strength in hundredths of a percent.
     #[allow(dead_code)] // used by nudge (task 5)
@@ -65,20 +68,34 @@ impl Engine {
             last_clock_us: None,
             input_pulses: 0,
             playing: false,
+            play_started_us: 0,
             out_pulses: 0,
             strength_hundredths,
             nudge_acc: 0,
         }
     }
 
-    /// Scans every byte of a packet; only `0xF8` has an effect so far.
+    /// Scans every byte of a packet; only `0xF8` and `0xFC` have an effect.
+    /// Start, Continue and SPP (and its data bytes) are ignored.
     pub fn on_midi(&mut self, now_us: u64, bytes: &[u8]) -> Output {
+        let mut out = self.on_tick(now_us);
         for &b in bytes {
-            if b == CLOCK {
-                self.on_clock(now_us);
+            match b {
+                CLOCK => {
+                    self.on_clock(now_us);
+                    if self.playing {
+                        self.out_pulses += 1;
+                        out.send.push(CLOCK);
+                    }
+                }
+                STOP if self.playing => {
+                    self.playing = false;
+                    out.send.push(STOP);
+                }
+                _ => {}
             }
         }
-        Output::default()
+        out
     }
 
     fn on_clock(&mut self, now_us: u64) {
@@ -93,17 +110,38 @@ impl Engine {
         self.input_pulses += 1;
     }
 
-    pub fn on_command(&mut self, _now_us: u64, _cmd: Command) -> Output {
-        Output::default()
+    pub fn on_command(&mut self, now_us: u64, cmd: Command) -> Output {
+        match cmd {
+            Command::Play if !self.playing => {
+                self.playing = true;
+                self.play_started_us = now_us;
+                self.out_pulses = 0;
+                Output { send: vec![START] }
+            }
+            Command::Pause if self.playing => {
+                self.playing = false;
+                Output { send: vec![STOP] }
+            }
+            _ => Output::default(),
+        }
     }
 
-    pub fn on_tick(&mut self, _now_us: u64) -> Output {
-        Output::default()
+    /// Sends one `Stop` and pauses when the clock was lost while playing.
+    pub fn on_tick(&mut self, now_us: u64) -> Output {
+        match self.next_deadline_us() {
+            Some(d) if now_us > d => {
+                self.playing = false;
+                Output { send: vec![STOP] }
+            }
+            _ => Output::default(),
+        }
     }
 
+    /// While playing: when signal loss will be declared. `None` while paused.
     #[must_use]
     pub fn next_deadline_us(&self) -> Option<u64> {
-        None
+        self.playing
+            .then(|| self.last_clock_us.unwrap_or(0).max(self.play_started_us) + SIGNAL_TIMEOUT_US)
     }
 
     #[must_use]
