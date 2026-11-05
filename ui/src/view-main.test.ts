@@ -153,3 +153,21 @@ it("play_button_dark_green_when_paused", () => {
   view.update({ ...base, playing: false });
   expect(play.classList.contains("playing")).toBe(false);
 });
+
+it("play_glyph_node_not_replaced_on_unchanged_state", () => {
+  const glyph = btn("Play").querySelector(".glyph") as HTMLElement;
+  const text = glyph.firstChild;
+  view.update({ ...base });
+  view.update({ ...base });
+  expect(btn("Play").querySelector(".glyph")).toBe(glyph);
+  expect(glyph.firstChild).toBe(text);
+  glyph.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  expect(api.play).toHaveBeenCalledTimes(1);
+});
+
+it("nudge_pointerdown_on_glyph_starts_nudge", () => {
+  view.update({ ...base, playing: true });
+  const glyph = btn("Push").querySelector(".glyph") as HTMLElement;
+  glyph.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+  expect(api.nudgeStart).toHaveBeenCalledWith("push");
+});

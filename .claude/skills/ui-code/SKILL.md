@@ -10,6 +10,8 @@ description: Use when editing anything in ui/: TypeScript views, api.ts, styles.
 - No frameworks: plain TS modules and DOM APIs. No CSS framework: plain CSS with custom properties (tokens) in `ui/src/styles.css`; no hard-coded colours or radii outside the token block.
 - All text is English. Never name third-party software (Traktor, Ableton...).
 - Icon-only buttons (`◀◀`, `▶`/`⏸`, `▶▶`) need an `aria-label` (`Slow down`, `Play`/`Pause`, `Push`).
+- Button markup: build with `glyphButton` (`dom.ts`): glyph inside `<span class="glyph">`, CSS `pointer-events: none` on it so the button is always the event target; buttons are `user-select: none`.
+- `update()` runs ~30x/s: write to the DOM only when a value changed (never rewrite text under the pointer; WebKit drops the click).
 - Port rows are a green/red dot (`ok`/`err`) plus `In · <name>` / `Out · <name>`; no status text.
 - BPM has 1 decimal, `—` when `null`. Beats 1-4: cell 1 red (`one`), 2-4 orange, all off when paused.
 - The UI only talks to Rust through `ui/src/api.ts`; views never import `@tauri-apps/api` directly.

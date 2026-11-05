@@ -1,5 +1,5 @@
 import { api, type Settings } from "./api";
-import { el } from "./dom";
+import { el, glyphButton } from "./dom";
 
 export function mountSettings(root: HTMLElement, initial: Settings, onBack: () => void): void {
   let current = { ...initial };
@@ -18,7 +18,7 @@ export function mountSettings(root: HTMLElement, initial: Settings, onBack: () =
     return queue;
   };
 
-  const back = el("button", "back", "‹ Settings");
+  const back = glyphButton("back", "‹ Settings");
   const header = el("div", "header");
   header.append(back);
   back.addEventListener("click", onBack);

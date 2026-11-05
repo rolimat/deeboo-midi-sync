@@ -51,6 +51,14 @@ button {
   color: inherit;
   border: 0;
   cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn .glyph,
+.icon-btn .glyph,
+.back .glyph {
+  pointer-events: none;
 }
 
 .icon-btn,
