@@ -25,7 +25,7 @@ messages: scan every byte.
 - Pause: send `Stop`, stop forwarding; BPM and In state keep being measured.
 - Incoming Start/Continue/SPP: never forwarded; the slave starts only with Deeboo's Play.
 - Incoming Stop while playing: forward `Stop`, pause.
-- No `0xF8` for 500 ms while playing: one `Stop`, pause; returning clock does not resume.
+- No `0xF8` for 500 ms while playing (counted from Play if none arrived since): one `Stop`, pause; returning clock does not resume. `next_deadline_us()` is `None` while paused.
 
 ## Nudge (spec §5.3)
 - Push inserts a pulse mid-interval, Slow drops one; only while playing.
