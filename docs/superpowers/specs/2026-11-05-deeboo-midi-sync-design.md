@@ -1,6 +1,6 @@
 # Deeboo MIDI Sync — Documento de diseño
 
-Fecha: 2026-11-05 · Estado: borrador para aprobación
+Fecha: 2026-11-05 · Estado: aprobado (2026-11-05)
 
 ## 1. Intención y porqué
 
@@ -177,8 +177,9 @@ foco. Sin icono en el Dock (`ActivationPolicy::Accessory`).
 - **`midir`** para MIDI (sustituye a mkmidilibrary tras la revisión: más madura, puertos
   virtuales en macOS, timestamps de CoreMIDI). El motor se aísla para poder cambiar la
   librería MIDI sin tocar la lógica.
-- UI: **TypeScript + Vite sin framework** *(decisión del diseñador: un popover pequeño no lo
-  justifica)*.
+- UI: **TypeScript + Vite sin framework** y **CSS propio con variables** (tokens de color y
+  espaciado), sin framework CSS *(decisión del diseñador: un popover pequeño no lo justifica;
+  si la UI crece, Tailwind CSS v4 sería la opción)*.
 
 ### 7.1 Estructura propuesta
 
