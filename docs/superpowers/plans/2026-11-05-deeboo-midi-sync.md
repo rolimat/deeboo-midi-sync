@@ -78,7 +78,7 @@ tools/jitter-probe/src/{lib.rs,main.rs}
 .github/workflows/ci.yml             # Task 1 (phase 0), extended by Task 6
 .github/workflows/release.yml        # Task 11, tag v*
 .github/actions/macos-build/         # shared macOS build steps (Task 11)
-.github/dependabot.yml
+.github/dependabot.yml               # Task 11
 README.md                            # user + dev docs
 AGENTS.md                            # level 1 agent guide (source of truth, ≤ 80 lines)
 CLAUDE.md                            # `@AGENTS.md` import for Claude Code
@@ -94,7 +94,7 @@ scripts/check-agent-docs.sh          # enforces the token budget in `just lint`
 **Files:**
 - Create: `docker/Dockerfile`, `compose.yaml`, `.devcontainer/devcontainer.json`, `rust-toolchain.toml`, `Cargo.toml`, `deny.toml`, `justfile`, `lefthook.yml`, `.hadolint.yaml`, `.dockerignore`
 - Create: `crates/clock-core/Cargo.toml`, `crates/clock-core/src/lib.rs`
-- Create: `.github/workflows/ci.yml`, `.github/dependabot.yml`
+- Create: `.github/workflows/ci.yml`
 - Modify: `.gitignore` (add `target/`, `ui/node_modules/`, `ui/dist/`)
 
 **Interfaces:**
@@ -105,7 +105,6 @@ scripts/check-agent-docs.sh          # enforces the token budget in `just lint`
   - Job `linux` builds `docker/Dockerfile` with `docker/build-push-action` and the GHA cache, then runs `docker compose run --rm dev just precommit`. This makes CI identical to the local hook.
   - Job `macos` (`macos-latest`) installs the toolchain from `rust-toolchain.toml` and `just`, then runs `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`. Task 6 adds the UI and the DMG build to this job.
   - Pin every action by full commit SHA.
-- Produces `dependabot.yml`: weekly updates for `cargo` (/), `github-actions` (/) and `docker` (/docker). Task 6 adds `npm` (/ui).
 - Produces: crate `clock-core` (lib name `clock_core`) with `pub const PPQN: u64 = 24;` and `pub const SIGNAL_TIMEOUT_US: u64 = 500_000;`.
 
 - [ ] **Step 1: Write `rust-toolchain.toml`.** Pin the exact latest stable version at implementation time (e.g. `channel = "1.NN.0"`) with components `rustfmt` and `clippy`.
@@ -133,7 +132,7 @@ fn constants_match_spec() {
 - [ ] **Step 9: Verify.**
   - Run `docker compose build dev && just precommit` on the host. Expected: rustfmt, clippy, deny and hadolint are clean, and `constants_match_spec ... ok`.
   - Then run `lefthook install` and make an empty test commit. Expected: the hook runs `just precommit`.
-- [ ] **Step 10: Write `ci.yml` and `dependabot.yml`.** Validate the workflows with `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:<pinned tag>`. Expected: no output.
+- [ ] **Step 10: Write `ci.yml`.** Validate the workflows with `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:<pinned tag>`. Expected: no output.
 - [ ] **Step 11: Prerequisite (user).** `gh auth status` must show a logged-in account with push access to `rolimat/deeboo-midi-sync`. If it doesn't, stop and ask the user to run `! gh auth login`.
 - [ ] **Step 12: Commit** with `chore: dockerised dev environment, quality gates and CI` on a new branch `feat/v1`, then run `just ship`. Expected: the `linux` and `macos` jobs are both green on GitHub.
 
@@ -359,7 +358,7 @@ SetNudgeStrength(p): reject p outside 1.0..=10.0 (ignored, keep previous)
 **Files:**
 - Create: `ui/package.json`, `ui/vite.config.ts`, `ui/tsconfig.json`, `ui/eslint.config.js`, `ui/.prettierrc`, `ui/index.html`, `ui/src/main.ts`, `ui/src/styles.css`, `ui/src/smoke.test.ts`
 - Create: `src-tauri/Cargo.toml`, `src-tauri/build.rs`, `src-tauri/tauri.conf.json`, `src-tauri/Info.plist`, `src-tauri/capabilities/default.json`, `src-tauri/src/main.rs`, `src-tauri/src/lib.rs`, `src-tauri/icons/*`
-- Modify: `.github/workflows/ci.yml`, `.github/dependabot.yml`, `Cargo.toml` (add member), `justfile` (`dev`, `dmg` recipes; `check` builds `ui/dist` before cargo so `generate_context!` compiles in Docker)
+- Modify: `.github/workflows/ci.yml`, `Cargo.toml` (add member), `justfile` (`dev`, `dmg` recipes; `check` builds `ui/dist` before cargo so `generate_context!` compiles in Docker)
 
 **Interfaces:**
 - Produces: `pub fn run()` in `src-tauri/src/lib.rs`. Window label `"popover"`. Tray id `"main"`.
@@ -381,7 +380,6 @@ SetNudgeStrength(p): reject p outside 1.0..=10.0 (ignored, keep previous)
 - [ ] **Step 6: Manual check on macOS** with `just dev`. Expected: an icon appears in the menu bar with no Dock icon. Clicking it shows the dark popover under the icon, and clicking elsewhere hides it.
 - [ ] **Step 7: Extend CI.**
   - In `ci.yml` job `macos`: install Node 26, run `npm ci --prefix ui`, then `npm --prefix ui run tauri build -- --bundles dmg`, and upload the `.dmg` as an artifact named `deeboo-dmg`.
-  - Add `npm` (/ui) to `dependabot.yml`.
   - Re-run actionlint. Expected: no output.
 - [ ] **Step 8: Commit** with `feat(app): tauri tray app with popover window and ui scaffold`, then run `just ship`. Expected: CI is green, and the run has a `deeboo-dmg` artifact.
 
@@ -560,11 +558,12 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
 ### Task 11: Release pipeline and README
 
 **Files:**
-- Create: `.github/workflows/release.yml`
+- Create: `.github/workflows/release.yml`, `.github/dependabot.yml`
 - Modify: `README.md`, `.claude/skills/dev-workflow/references/ci-and-release.md`, `justfile` (the `dmg` recipe outputs to `target/release/bundle/dmg/`)
 
 **Interfaces:**
 - `release.yml` runs on tag `v*`. It reuses the macOS build steps from `ci.yml` and attaches the `.dmg` to a GitHub Release (`softprops/action-gh-release`, pinned by SHA). Factor the shared steps into a composite action at `.github/actions/macos-build/action.yml`, used by both `ci.yml` and `release.yml`.
+- `dependabot.yml`: weekly updates for `cargo` (/), `npm` (/ui), `github-actions` (/) and `docker` (/docker).
 - README sections:
   - What it is.
   - Install (unsigned):
@@ -574,10 +573,10 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
   - Usage: point the master's clock output at `Deeboo In` and the slave's clock input at `Deeboo Out`, then press Play on beat 1 of the phrase and nudge with ◀◀/▶▶.
   - Development: Docker, `just` recipes, hooks (`lefthook install`), macOS-only recipes, `just ship`.
 
-- [ ] **Step 1:** Write the composite action and `release.yml`, then switch `ci.yml` to the composite action. Run actionlint. Expected: no output.
+- [ ] **Step 1:** Write the composite action, `release.yml` and `dependabot.yml`, then switch `ci.yml` to the composite action. Run actionlint. Expected: no output.
 - [ ] **Step 2:** Run `just dmg` locally. Expected: `target/release/bundle/dmg/Deeboo MIDI Sync_<version>_aarch64.dmg` exists.
 - [ ] **Step 3:** Replace the `TODO(task-11)` placeholders in `README.md` (Install, Usage, Development) and update `.claude/skills/dev-workflow/references/ci-and-release.md` to match the real workflows.
-- [ ] **Step 4: Commit** with `ci: release on tag, shared macos build action; docs: README install and usage`, then run `just ship`. Expected: CI is green. The release workflow is first exercised when the user tags `v0.1.0`; ask before pushing any tag.
+- [ ] **Step 4: Commit** with `ci: release on tag, shared macos build action, dependabot; docs: README install and usage`, then run `just ship`. Expected: CI is green. The release workflow is first exercised when the user tags `v0.1.0`; ask before pushing any tag.
 
 ---
 
