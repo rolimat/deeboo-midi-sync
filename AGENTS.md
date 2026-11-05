@@ -16,7 +16,7 @@ Plan: `docs/superpowers/plans/2026-11-05-deeboo-midi-sync.md`.
 - Incoming Stop or clock loss while playing: send one `Stop`, pause.
 - Nudge default 4 %, range 1-10 %. BPM has 1 decimal, `—` without signal.
 - Popover: icon-only buttons; port rows are dot + `In · name` / `Out · name`.
-- No Dock icon (`Accessory` + `LSUIElement`). No signing or notarization.
+- No Dock icon (`Accessory` + `LSUIElement`). Ad-hoc signed (0.1.1+), no notarization.
 - Plain CSS custom properties and plain TS: no CSS or UI framework.
 - One monotonic µs clock feeds `clock-core`; never mix in midir timestamps.
 - Everything except real MIDI, the DMG and the jitter probe runs in Docker.

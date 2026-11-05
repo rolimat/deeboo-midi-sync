@@ -14,6 +14,6 @@ Spec §9.5, §8. Workflows live in `.github/workflows/`.
 - `.github/dependabot.yml`: weekly `cargo` (/), `npm` (/ui), `github-actions` (/), `docker` (/docker); minor and patch updates are grouped per ecosystem.
 - Local `just dmg` can fail at create-dmg's Finder AppleScript step in non-GUI sessions; `CI=true just dmg` skips the styling.
 
-## Unsigned DMG notes (spec §8)
-No signing or notarization. Install: drag to Applications; first open via System Settings, Privacy & Security, Open Anyway; if macOS says the app is damaged:
+## Ad-hoc signed DMG notes (spec §8)
+Ad-hoc signed since 0.1.1 (`bundle.macOS.signingIdentity` = `"-"` in `tauri.conf.json`, no Apple account), still not notarized. Verify with `codesign -dv --verbose=2` (`Signature=adhoc`) and `codesign --verify --deep --strict`. Install: drag to Applications; first open via System Settings, Privacy & Security, Open Anyway (normal path); fallback if macOS still says the app is damaged:
 `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`. The README carries these steps.

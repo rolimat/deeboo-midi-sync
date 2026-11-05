@@ -206,7 +206,7 @@ ui/                  # Frontend TS + Vite
 ## 8. Distribución
 
 - `tauri build` genera `.app` y **`.dmg`** (Apple Silicon; universal opcional si es barato).
-- **Sin firma ni notarización.** El README explica la instalación: arrastrar a Aplicaciones;
+- **Firma ad-hoc desde 0.1.1 (`signingIdentity` = `"-"`), sin notarización.** El README explica la instalación: arrastrar a Aplicaciones;
   al abrir, *Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente*; si macOS dice
   que está "dañada": `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`.
 
