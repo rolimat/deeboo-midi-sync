@@ -7,7 +7,7 @@ Spec §9.5, §8. Workflows live in `.github/workflows/`.
 - `macos`: `rustup show` (toolchain from `rust-toolchain.toml`), `brew install just`, clippy, tests. A later task adds the UI build and the `.dmg` artifact `deeboo-dmg`.
 - Actions are pinned by commit SHA; concurrency cancels superseded runs per ref.
 - `just ship` waits for the run of the exact pushed commit.
-- `changes` (`dorny/paths-filter`) gates `macos`: it runs only when `src-tauri/**`, `tools/**`, `ui/**`, `Cargo.lock`, `rust-toolchain.toml`, `.github/workflows/**` or `.github/actions/**` change. PRs to `main` always run it. Update the filter list here when a new build input appears.
+- `changes` (`dorny/paths-filter`) gates `macos`: it runs only when `src-tauri/**`, `tools/**`, `ui/**`, `Cargo.lock`, `rust-toolchain.toml`, `.github/workflows/**` or `.github/actions/**` change. PRs to `main` always run it. Pushes compare against the previous commit on the same branch (`base: github.ref`), not `main`. Update the filter list here when a new build input appears.
 
 ## Release (planned, Task 11)
 - Tag `vX.Y.Z` (`v*`) triggers `release.yml`: GitHub Release with the `.dmg` attached.
