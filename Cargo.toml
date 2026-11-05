@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/clock-core", "src-tauri"]
+members = ["crates/clock-core", "src-tauri", "tools/jitter-probe"]
 
 [workspace.package]
 edition = "2024"

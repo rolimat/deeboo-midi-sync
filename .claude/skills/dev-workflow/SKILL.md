@@ -20,6 +20,7 @@ Spec §9: [docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md](../../.
 | `just precommit` (`check`) | fmt-check + lint + test |
 | `just dev` / `just dmg` | macOS only: `npm --prefix ui run tauri dev` / `tauri build -- --bundles dmg` (run `npm ci` first if `ui/node_modules` is missing) |
 | `just ui-dist` | builds `ui/dist`; `lint` and `test` run it first because `tauri::generate_context!` needs it |
+| `just jitter -- --seconds 30 [--port-name N \| --connect N]` | macOS only: run `tools/jitter-probe`; `--port-name` makes a virtual destination (direct run), `--connect` attaches to an existing source such as `Deeboo Clock Sync Out` (via-Deeboo run); see README "Measuring jitter" |
 | `just ship` | push and wait for the CI run of this exact commit |
 
 UI steps are guarded by `[ -f ui/package.json ]`, so they appear once the UI exists.

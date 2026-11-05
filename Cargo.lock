@@ -1750,6 +1750,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "jitter-probe"
+version = "0.1.0"
+dependencies = [
+ "midir",
+]
+
+[[package]]
 name = "jni"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
