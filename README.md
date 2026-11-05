@@ -29,7 +29,7 @@ Everything except real MIDI and the DMG runs in Docker. Requires Docker, `just`,
 Agent guidance: `AGENTS.md` and `.claude/skills/`. Design: `docs/superpowers/specs/`.
 
 ## Measuring jitter
-`just jitter -- --seconds 30` (macOS) listens for MIDI clock and reports how steady it is: pulse count, mean, stddev and p99 |deviation| of the interval in microseconds, plus the implied BPM. It uses the receiver-side CoreMIDI timestamps.
+`just jitter --seconds 30` (macOS) listens for MIDI clock and reports how steady it is: pulse count, mean, stddev and p99 |deviation| of the interval in microseconds, plus the implied BPM. It uses the receiver-side CoreMIDI timestamps.
 
 - `--port-name NAME` (default `Deeboo Probe`): create a virtual destination; point the master clock's output at it (direct run).
 - `--connect NAME`: connect to an existing MIDI source whose name contains NAME, e.g. `--connect "Deeboo Clock Sync Out"` (via-Deeboo run).
