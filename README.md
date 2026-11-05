@@ -2,15 +2,15 @@
 
 ## What it is
 A macOS menu bar app that relays MIDI clock from a master to a slave, with Play/Pause and a
-hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports, `Deeboo In` and
-`Deeboo Out`, and shows the incoming BPM in the menu bar.
+hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports, `Deeboo Clock Sync In` and
+`Deeboo Clock Sync Out`, and shows the incoming BPM in the menu bar.
 
 ## Install
 TODO(task-11): download the `.dmg` from Releases and the unsigned-app steps.
 
 ## Usage
-1. Send MIDI clock from your master to `Deeboo In`; the menu bar shows the BPM and a green dot.
-2. Point your slave's clock input at `Deeboo Out`.
+1. Send MIDI clock from your master to `Deeboo Clock Sync In`; the menu bar shows the BPM and a green dot.
+2. Point your slave's clock input at `Deeboo Clock Sync Out`.
 3. Press Play to start the slave. Hold `◀◀` or `▶▶` to nudge it slower or faster; release to return to 1:1.
 4. Ports, nudge strength and launch at login are in Settings (⚙).
 

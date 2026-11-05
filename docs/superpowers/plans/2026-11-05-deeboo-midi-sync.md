@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A macOS menu bar app that relays MIDI clock from a virtual `Deeboo In` port to a virtual `Deeboo Out` port, with Play/Pause, hold-to-nudge (vinyl style), BPM and 1–4 beat display, shipped as an unsigned `.dmg`, built in a Dockerised dev environment with linters, git hooks and CI.
+**Goal:** A macOS menu bar app that relays MIDI clock from a virtual `Deeboo Clock Sync In` port to a virtual `Deeboo Clock Sync Out` port, with Play/Pause, hold-to-nudge (vinyl style), BPM and 1–4 beat display, shipped as an unsigned `.dmg`, built in a Dockerised dev environment with linters, git hooks and CI.
 
 **Architecture:** All timing logic lives in a pure, deterministic Rust crate `clock-core` (bytes + timestamps in → bytes out + state), tested in Docker with simulated time. A Tauri 2 app (`src-tauri`) wires `clock-core` to `midir` virtual ports, a timer thread, the tray icon and a borderless popover window. The UI (`ui/`) is TypeScript + Vite with plain CSS, talking to Rust through Tauri commands and one state event.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - All user-visible app text in **English**. No app text names Traktor, Ableton or any specific software.
-- Default port names: `Deeboo In` (virtual destination) and `Deeboo Out` (virtual source).
+- Default port names: `Deeboo Clock Sync In` (virtual destination) and `Deeboo Clock Sync Out` (virtual source). (changed 2026-11-05 at user request; was `Deeboo In` / `Deeboo Out`)
 - MIDI clock: 24 PPQN, `0xF8` clock, `0xFA` Start, `0xFB` Continue, `0xFC` Stop, `0xF2` SPP.
 - No clock for **500 ms** = "no signal".
 - Nudge strength default **4 %**, allowed range **1–10 %**.
@@ -426,7 +426,7 @@ pub struct BridgeSnapshot { pub state: clock_core::State, pub in_port_ok: bool, 
 - [ ] **Step 3: Implement `Bridge`** as specified. There is no automated port test, because Docker has no MIDI sequencer. The logic under it is already covered by clock-core.
 - [ ] **Step 4:** In `lib.rs` `setup`, start the `Bridge` with the default names and strength 4.0, and `app.manage(bridge)`.
 - [ ] **Step 5: Run** `just precommit`. Expected: PASS.
-- [ ] **Step 6: Manual check on macOS** with `just dev` and a clock master pointed at `Deeboo In` and a slave listening on `Deeboo Out`. Expected:
+- [ ] **Step 6: Manual check on macOS** with `just dev` and a clock master pointed at `Deeboo Clock Sync In` and a slave listening on `Deeboo Clock Sync Out`. Expected:
   - Both ports appear in other apps.
   - With `RUST_LOG=debug`, the app logs BPM once per second (temporary debug log; remove before commit).
   - Pressing nothing sends nothing to the slave.
@@ -449,7 +449,7 @@ pub struct BridgeSnapshot { pub state: clock_core::State, pub in_port_ok: bool, 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)] #[serde(rename_all = "camelCase")]
 pub struct Settings { pub input_name: String, pub output_name: String,
                       pub nudge_strength_pct: f64, pub launch_at_login: bool }
-impl Default for Settings { /* "Deeboo In", "Deeboo Out", 4.0, false */ }
+impl Default for Settings { /* "Deeboo Clock Sync In", "Deeboo Clock Sync Out", 4.0, false */ }
 pub fn validate(s: Settings) -> Result<Settings, String>; // trims names; empty or > 63 chars → Err; pct outside 1.0..=10.0 → Err
 pub fn load(path: &Path) -> Settings;                     // missing/corrupt → Default (log::warn on corrupt)
 pub fn save(path: &Path, s: &Settings) -> std::io::Result<()>;  // write temp file + rename
@@ -570,7 +570,7 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
     1. Open the DMG and drag the app to Applications.
     2. Open it once. When macOS blocks it, go to *System Settings → Privacy & Security → Open Anyway*.
     3. If macOS says the app "is damaged", run `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`.
-  - Usage: point the master's clock output at `Deeboo In` and the slave's clock input at `Deeboo Out`, then press Play on beat 1 of the phrase and nudge with ◀◀/▶▶.
+  - Usage: point the master's clock output at `Deeboo Clock Sync In` and the slave's clock input at `Deeboo Clock Sync Out`, then press Play on beat 1 of the phrase and nudge with ◀◀/▶▶.
   - Development: Docker, `just` recipes, hooks (`lefthook install`), macOS-only recipes, `just ship`.
 
 - [ ] **Step 1:** Write the composite action, `release.yml` and `dependabot.yml`, then switch `ci.yml` to the composite action. Run actionlint. Expected: no output.

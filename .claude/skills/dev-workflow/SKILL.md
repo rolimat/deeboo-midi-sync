@@ -9,7 +9,7 @@ Spec §9: [docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md](../../.
 
 ## Where things run
 - Docker (image `deeboo-dev`, Rust 1.99.1, Node, `just`, cargo-deny, hadolint): fmt, lint, tests. Recipes re-exec through `docker compose run --rm dev just <recipe>` when `DEEBOO_IN_CONTAINER` is unset, so run them from the host as usual.
-- macOS host only: `just dev`, `just dmg`, `just jitter` (need CoreMIDI and macOS bundles). They exit with an error elsewhere.
+- macOS host only: `just dev`, `just dmg`, `just jitter` (need CoreMIDI and macOS bundles). They exit with an error elsewhere. They prepend `$HOME/.cargo/bin` to PATH themselves (rustup is installed with `--no-modify-path`).
 
 ## Recipes
 | Recipe | Does |

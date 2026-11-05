@@ -65,6 +65,7 @@ dev:
     #!/usr/bin/env bash
     set -euo pipefail
     [ "$(uname)" = Darwin ] || { echo "just dev runs on the macOS host only" >&2; exit 1; }
+    export PATH="$HOME/.cargo/bin:$PATH"
     if [ ! -f ui/node_modules/.bin/tauri ]; then npm --prefix ui ci; fi
     npm --prefix ui run tauri dev
 
@@ -72,6 +73,7 @@ dmg:
     #!/usr/bin/env bash
     set -euo pipefail
     [ "$(uname)" = Darwin ] || { echo "just dmg runs on the macOS host only" >&2; exit 1; }
+    export PATH="$HOME/.cargo/bin:$PATH"
     if [ ! -f ui/node_modules/.bin/tauri ]; then npm --prefix ui ci; fi
     npm --prefix ui run tauri build -- --bundles dmg
 
@@ -79,6 +81,7 @@ jitter:
     #!/usr/bin/env bash
     set -euo pipefail
     [ "$(uname)" = Darwin ] || { echo "just jitter runs on the macOS host only" >&2; exit 1; }
+    export PATH="$HOME/.cargo/bin:$PATH"
     cargo run --release -p jitter-probe
 
 # Push, wait for the GitHub Actions run of this exact commit, fail if it fails.

@@ -12,7 +12,7 @@ desplazado.
 Deeboo MIDI Sync es una **app de barra de menú para macOS** que se pone en medio:
 
 ```
-Software maestro ──clock──▶ [Deeboo In]  Deeboo  [Deeboo Out] ──clock──▶ Software esclavo
+Software maestro ──clock──▶ [Deeboo Clock Sync In]  Deeboo  [Deeboo Clock Sync Out] ──clock──▶ Software esclavo
 ```
 
 Recibe el clock por un puerto MIDI virtual de entrada y lo reenvía por un puerto virtual
@@ -26,7 +26,7 @@ dispositivo puede conectarse a In/Out.
 ## 2. Objetivos
 
 1. Crear dos puertos MIDI **virtuales** (CoreMIDI) con nombres configurables
-   (por defecto `Deeboo In` y `Deeboo Out`).
+   (por defecto `Deeboo Clock Sync In` y `Deeboo Clock Sync Out`). (cambiado el 2026-11-05 a petición del usuario; antes `Deeboo In` y `Deeboo Out`)
 2. Reenviar el MIDI clock de In a Out con la mínima latencia y jitter posible.
 3. **Play/Pausa** del reenvío.
 4. **Empuje fino** (Push ▶▶ / Slow down ◀◀) mientras se mantiene pulsado.
@@ -150,8 +150,8 @@ foco. Sin icono en el Dock (`ActivationPolicy::Accessory`).
 │ [  ◀◀  ]   [   ▶ / ⏸   ]   [  ▶▶  ]       │
 └──────────────────────────────────────────┘
 ┌──────────────────────────────────────────┐
-│ ● In · Deeboo In                         │
-│ ● Out · Deeboo Out                       │
+│ ● In · Deeboo Clock Sync In                         │
+│ ● Out · Deeboo Clock Sync Out                       │
 └──────────────────────────────────────────┘
 ```
 
@@ -242,7 +242,7 @@ deben ir en Docker se ejecutan vía `docker compose run` si no se está ya dentr
 
 ## 10. Pruebas de aceptación (manuales, en macOS)
 
-1. Con la app abierta, `Deeboo In` y `Deeboo Out` aparecen como puertos MIDI en otros programas.
+1. Con la app abierta, `Deeboo Clock Sync In` y `Deeboo Clock Sync Out` aparecen como puertos MIDI en otros programas.
 2. Maestro enviando clock a 124 BPM → la barra muestra `124.0` y el punto verde parpadea.
 3. Play → el esclavo arranca y sigue el tempo; Pausa → el esclavo se para.
 4. Mantener ▶▶ un segundo → el esclavo se adelanta; al soltar, mantiene el mismo tempo que el

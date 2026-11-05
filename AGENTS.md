@@ -9,7 +9,7 @@ Plan: `docs/superpowers/plans/2026-11-05-deeboo-midi-sync.md`.
 
 ## Hard rules
 - App text is English; never name third-party software (Traktor, Ableton...).
-- Ports default `Deeboo In` (virtual destination) / `Deeboo Out` (virtual source).
+- Ports default `Deeboo Clock Sync In` (virtual destination) / `Deeboo Clock Sync Out` (virtual source).
 - 24 PPQN; `0xF8` clock, `0xFA` Start, `0xFB` Continue, `0xFC` Stop, `0xF2` SPP.
 - No clock for 500 ms = no signal. Deeboo starts paused.
 - Only Deeboo's Play starts the slave; incoming Start/Continue/SPP are never forwarded.
