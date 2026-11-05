@@ -13,6 +13,27 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      macos: ${{ steps.filter.outputs.macos }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            macos:
+              - 'src-tauri/**'
+              - 'tools/**'
+              - 'ui/**'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - '.github/workflows/**'
+              - '.github/actions/**'
+
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +50,8 @@ jobs:
       - run: docker compose run --rm dev just precommit
 
   macos:
+    needs: changes
+    if: github.event_name == 'pull_request' || needs.changes.outputs.macos == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
