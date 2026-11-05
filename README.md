@@ -6,10 +6,10 @@ hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports
 `Deeboo Clock Sync Out`, and shows the incoming BPM in the menu bar.
 
 ## Install
-Download the `.dmg` from the GitHub Releases page. The app is unsigned, so macOS needs a few extra steps.
+Download the `.dmg` from the GitHub Releases page. The app is ad-hoc signed (since 0.1.1) but not notarized, so macOS shows an "unidentified developer" warning the first time.
 1. Open the DMG and drag the app to Applications.
-2. Open it once. When macOS blocks it, go to System Settings → Privacy & Security → Open Anyway.
-3. If macOS says the app "is damaged", run:
+2. Open it once. When macOS blocks it, go to System Settings → Privacy & Security → Open Anyway. This is the normal path.
+3. Fallback: if macOS still says the app "is damaged", run:
    `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`
 
 ## Usage
