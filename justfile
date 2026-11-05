@@ -27,6 +27,7 @@ lint:
     cargo clippy --workspace --all-targets -- -D warnings
     cargo deny check
     hadolint docker/Dockerfile
+    scripts/check-agent-docs.sh
     if [ -f ui/package.json ]; then npm --prefix ui run lint && npm --prefix ui run typecheck; fi
 
 test:
