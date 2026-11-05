@@ -5,7 +5,7 @@ Spec §9.5, §8. Workflows live in `.github/workflows/`.
 ## CI (`ci.yml`, runs on every push and on PRs to `main`)
 - `linux`: builds the same `docker/Dockerfile` image (buildx, GHA cache), then `docker compose run --rm dev just precommit`.
 - `macos`: `rustup show` (toolchain from `rust-toolchain.toml`), Node 26, `brew install just`, `npm ci --prefix ui`, UI build (needed by `generate_context!`), clippy, tests, `npm --prefix ui run tauri build -- --bundles dmg`, then uploads `target/release/bundle/dmg/*.dmg` as artifact `deeboo-dmg`.
-- Actions are pinned by commit SHA; concurrency cancels superseded runs per ref.
+- Actions are pinned by commit SHA; concurrency is per job: `linux` cancels superseded runs per ref, `macos` never cancels a running build (one pending run per ref, the newest), so every macOS build finishes.
 - `just ship` waits for the run of the exact pushed commit.
 - `changes` (`dorny/paths-filter`) gates `macos`: it runs only when `src-tauri/**`, `tools/**`, `ui/**`, `Cargo.lock`, `rust-toolchain.toml`, `.github/workflows/**` or `.github/actions/**` change. PRs to `main` always run it. Pushes compare against the previous commit on the same branch (`base: github.ref`), not `main`. Update the filter list here when a new build input appears.
 
