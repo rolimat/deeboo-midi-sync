@@ -8,8 +8,11 @@ hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports
 ## Install
 Download the `.dmg` from the GitHub Releases page. The app is ad-hoc signed (since 0.1.1) but not notarized, so macOS shows an "unidentified developer" warning the first time.
 1. Open the DMG and drag the app to Applications.
-2. Open it once. When macOS blocks it, go to System Settings → Privacy & Security → Open Anyway. This is the normal path.
-3. Fallback: if macOS still says the app "is damaged", run:
+2. Open it once. macOS blocks it and shows a warning: click **Done** (not "Move to Bin").
+3. Open **System Settings → Privacy & Security** (or search "Security" in System Settings) and scroll down to the **Security** section.
+4. Under "Allow applications from" you will see *"Deeboo MIDI Sync" was blocked to protect your Mac*. Click **Open Anyway**, then confirm with your password or Touch ID.
+5. Open the app again and click **Open** in the last dialog. macOS remembers the choice; you only do this once per version.
+6. Fallback: if macOS still says the app "is damaged", run:
    `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`
 
 ## Usage
