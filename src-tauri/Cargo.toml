@@ -20,3 +20,6 @@ tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-positioner = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 log = "0.4"
+clock-core = { path = "../crates/clock-core" }
+midir = "0.10"
+env_logger = "0.11"
