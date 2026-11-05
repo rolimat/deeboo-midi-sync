@@ -7,12 +7,13 @@ Radius 12px on cards, 16px on the panel. Popover width 340px, dark, rounded card
 
 ## Component classes
 - Beat cell: base cell, `on` (lit), `one` (the red first beat).
-- Port dot: `ok` (green) or `err` (red).
+- Port dot: `.dot` + `ok` (green) or `err` (red). Also `.bpm`, `.beats`, `.ctl`, `.btn` (`.play`, `.quit`), `.field`, `.error`, `.back`, `.icon-btn`.
+- Panel `#app` is `min-height:100vh`; window height (420) is set in `tauri.conf.json`.
 - Cards: BPM card and ports card.
 - Class names introduced later are added here by the task that adds them.
 
 ## Strings (English only)
-- Header: `Deeboo MIDI Sync`, with a ⚙ button.
+- Header: `Deeboo MIDI Sync`, with a ⚙ button (aria `Settings`).
 - BPM card: number with 1 decimal or `—`; label `BPM`; buttons `◀◀` (aria `Slow down`), `▶`/`⏸` (aria `Play`/`Pause`), `▶▶` (aria `Push`).
 - Ports card: `In · <inputName>`, `Out · <outputName>`.
 - Settings: `‹ Settings`, `MIDI PORTS`, `Input name`, `Output name`, `NUDGE`, `Strength while held` (number 1-10, step 0.5, `%`), `Launch at login`, `Quit Deeboo`.

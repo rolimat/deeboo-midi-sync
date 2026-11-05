@@ -17,7 +17,7 @@ description: Use when editing anything in ui/: TypeScript views, api.ts, styles.
 - Tests are Vitest + jsdom with `api` mocked; see the `writing-tests` skill.
 
 ## Structure
-`api.ts` typed wrappers; `view-main.ts` (`mountMain`), `view-settings.ts` (`mountSettings`); `main.ts` bootstraps and swaps views; `styles.css` tokens + components.
+`api.ts` typed wrappers; `view-main.ts` (`mountMain`), `view-settings.ts` (`mountSettings`); `main.ts` bootstraps and swaps views (`dom.ts` has the `el` helper); settings save on each field `change`, serialized; `styles.css` tokens + components.
 Tokens, component classes and every UI string: [references/styles-and-copy.md](references/styles-and-copy.md) (read before changing styles or copy).
 
 ## Checklist
