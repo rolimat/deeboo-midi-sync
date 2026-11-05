@@ -1,0 +1,11 @@
+[workspace]
+resolver = "3"
+members = ["crates/clock-core"]
+
+[workspace.package]
+edition = "2024"
+license = "GPL-3.0-only"
+version = "0.1.0"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }

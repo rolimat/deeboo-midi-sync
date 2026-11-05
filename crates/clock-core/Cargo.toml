@@ -1,0 +1,12 @@
+[package]
+name = "clock-core"
+description = "Pure MIDI clock logic for Deeboo MIDI Sync"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[lib]
+name = "clock_core"
+
+[lints]
+workspace = true
