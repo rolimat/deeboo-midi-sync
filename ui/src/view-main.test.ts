@@ -49,12 +49,13 @@ it("renders_bpm_with_one_decimal", () => {
   expect(root.querySelector(".bpm")?.textContent).toBe("—");
 });
 
-it("lights_beats_up_to_current", () => {
+it("lights_only_current_beat", () => {
+  view.update({ ...base, beat: 1 });
+  expect(cells().map((x) => x.classList.contains("on"))).toEqual([true, false, false, false]);
+  expect(cells().map((x) => x.classList.contains("one"))).toEqual([true, false, false, false]);
   view.update({ ...base, beat: 3 });
-  const c = cells();
-  expect(c.map((x) => x.classList.contains("on"))).toEqual([true, true, true, false]);
-  expect(c[0]?.classList.contains("one")).toBe(true);
-  expect(c[3]?.classList.contains("one")).toBe(false);
+  expect(cells().map((x) => x.classList.contains("on"))).toEqual([false, false, true, false]);
+  expect(cells().some((x) => x.classList.contains("one"))).toBe(false);
   view.update({ ...base, beat: null });
   expect(cells().some((x) => x.classList.contains("on") || x.classList.contains("one"))).toBe(
     false,

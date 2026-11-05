@@ -148,8 +148,7 @@ foco. Sin icono en el Dock (`ActivationPolicy::Accessory`).
 ```
 ◉ Deeboo MIDI Sync                         ⚙
 ┌──────────────────────────────────────────┐
-│ 124.0                                    │
-│ BPM                                      │
+│ 124.0 BPM                                │
 │ [■ 1 ][■ 2 ][■ 3 ][□ 4 ]   (1 en rojo)    │
 │ [  ◀◀  ]   [   ▶ / ⏸   ]   [  ▶▶  ]       │
 └──────────────────────────────────────────┘
@@ -162,8 +161,9 @@ foco. Sin icono en el Dock (`ActivationPolicy::Accessory`).
 - Botones **solo con iconos**. ◀◀ y ▶▶ actúan mientras se mantienen pulsados
   (pointerdown → empieza, pointerup/pointerleave/blur → para). Play muestra ▶ en Pausa
   y ⏸ en Play.
-- Indicador de beats 1–4: se iluminan los beats hasta el actual del compás; el 1 en rojo,
-  2–4 en naranja (como el mockup). En Pausa se muestran todos apagados.
+- Indicador de beats 1–4: se ilumina **solo el beat actual** del compás; el 1 en rojo,
+  2–4 en naranja. En Pausa se muestran todos apagados. La etiqueta `BPM` va a la derecha
+  del número, en la misma línea (cambiado 2026-11-05 a petición del usuario).
 - Puertos: solo punto verde/rojo + nombre, sin texto de estado.
 
 ### 6.3 Settings (⚙) — aprobado tal cual

@@ -506,7 +506,7 @@ export const api: { play(): Promise<void>; pause(): Promise<void>; nudgeStart(d:
 
 - [ ] **Step 1: Write failing tests** (Vitest + jsdom, mocking `api`):
   - `renders_bpm_with_one_decimal`: `update({bpm:124, ...})` → text `124.0`. `bpm:null` → `—`.
-  - `lights_beats_up_to_current`: `beat:3` → cells 1–3 have class `on`, cell 1 also has `one`, and cell 4 has neither. `beat:null` → none lit.
+  - `lights_only_current_beat`: `beat:1` → only cell 1 has `on` and `one`; `beat:3` → only cell 3 has `on`, no cell has `one`. `beat:null` → none lit.
   - `play_button_toggles_icon_and_command`: `playing:false` shows `▶` and a click calls `api.play`. `playing:true` shows `⏸` and a click calls `api.pause`.
   - `nudge_buttons_disabled_while_paused`.
   - `hold_push_starts_and_release_stops`: `pointerdown` on `▶▶` → `nudgeStart("push")`. `pointerup` → `nudgeStop`.

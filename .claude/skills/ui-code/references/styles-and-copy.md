@@ -7,7 +7,7 @@ Radius 12px on cards, 16px on the panel. Popover width 340px, dark, rounded card
 
 ## Component classes
 - Beat cell: base cell, `on` (lit), `one` (the red first beat).
-- Port dot: `.dot` + `ok` (green) or `err` (red). Also `.bpm`, `.beats`, `.ctl`, `.btn` (`.play`, `.quit`), `.field`, `.error`, `.back`, `.icon-btn`.
+- Port dot: `.dot` + `ok` (green) or `err` (red). Also `.bpm-row` (number + `BPM` label, baseline-aligned), `.bpm`, `.beats`, `.ctl`, `.btn` (`.play`, `.quit`), `.field`, `.error`, `.back`, `.icon-btn`.
 - Play button: dark green (`--green-dark`, light icon) when paused; `.playing` adds bright `--green` with ⏸.
 - Nudge button `.active` while held: `--beat-on` background with glow, dark icon (added with `nudgeStart`, removed in the stop path).
 - Panel `#app` has no min-height: `fit-window.ts` observes it (`ResizeObserver`) and calls `setSize(340, height)`; `tauri.conf.json` height (330) is only the first-frame guess.

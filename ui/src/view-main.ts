@@ -60,7 +60,9 @@ export function mountMain(
   ctl.append(slow, play, push);
 
   const bpmCard = el("div", "card");
-  bpmCard.append(bpm, el("div", "dim", "BPM"), beatRow, ctl);
+  const bpmRow = el("div", "bpm-row");
+  bpmRow.append(bpm, el("div", "dim", "BPM"));
+  bpmCard.append(bpmRow, beatRow, ctl);
 
   const inDot = el("span", "dot err");
   const outDot = el("span", "dot err");
@@ -87,7 +89,7 @@ export function mountMain(
       const bpmText = s.bpm === null ? "—" : s.bpm.toFixed(1);
       if (bpm.textContent !== bpmText) bpm.textContent = bpmText;
       beats.forEach((c, i) => {
-        const lit = s.beat !== null && i < s.beat;
+        const lit = s.beat !== null && i === s.beat - 1;
         c.classList.toggle("on", lit);
         c.classList.toggle("one", lit && i === 0);
       });

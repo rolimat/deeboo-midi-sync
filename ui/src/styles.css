@@ -82,6 +82,12 @@ button {
   margin-bottom: 10px;
 }
 
+.bpm-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
 .bpm {
   font-size: 38px;
   font-weight: 700;
