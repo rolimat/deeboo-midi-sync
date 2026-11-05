@@ -28,6 +28,7 @@
 - The lefthook **pre-commit** hook runs format check, lint **and tests**.
 - Repo license is GPL-3.0. `cargo-deny` must accept only licenses compatible with it.
 - Agent guidance uses progressive disclosure: `AGENTS.md` ≤ 80 lines, each `SKILL.md` ≤ 100 lines, details in `references/`. `CLAUDE.md` imports `AGENTS.md`. Every task keeps the skills in sync with what it changes (Task 2).
+- **CI from phase 0:** Task 1 creates the CI. All work happens on branch `feat/v1`, never directly on `main`. **Every task ends with commit → `just ship`.** `just ship` pushes and waits for the GitHub Actions run of that exact commit. A task is done only when CI is green. If CI is red, fix it in a new commit and run `just ship` again before starting the next task.
 - **Time base (plan decision):** the app feeds `clock-core` timestamps from one monotonic clock (`Instant` since app start, in µs) for every MIDI callback and timer event. midir's own timestamps are not mixed in, because two clocks would break the arithmetic for deadlines and signal loss. The jitter probe (Task 12) uses midir/CoreMIDI timestamps on purpose, because it measures what the receiver actually sees.
 
 ## Review Focus
@@ -74,7 +75,10 @@ ui/src/view-settings.ts              # settings form
 ui/src/styles.css                    # tokens + components
 ui/src/*.test.ts                     # Vitest (jsdom)
 tools/jitter-probe/src/{lib.rs,main.rs}
-.github/workflows/ci.yml, release.yml, .github/dependabot.yml
+.github/workflows/ci.yml             # Task 1 (phase 0), extended by Task 6
+.github/workflows/release.yml        # Task 11, tag v*
+.github/actions/macos-build/         # shared macOS build steps (Task 11)
+.github/dependabot.yml
 README.md                            # user + dev docs
 AGENTS.md                            # level 1 agent guide (source of truth, ≤ 80 lines)
 CLAUDE.md                            # `@AGENTS.md` import for Claude Code
@@ -90,10 +94,18 @@ scripts/check-agent-docs.sh          # enforces the token budget in `just lint`
 **Files:**
 - Create: `docker/Dockerfile`, `compose.yaml`, `.devcontainer/devcontainer.json`, `rust-toolchain.toml`, `Cargo.toml`, `deny.toml`, `justfile`, `lefthook.yml`, `.hadolint.yaml`, `.dockerignore`
 - Create: `crates/clock-core/Cargo.toml`, `crates/clock-core/src/lib.rs`
+- Create: `.github/workflows/ci.yml`, `.github/dependabot.yml`
 - Modify: `.gitignore` (add `target/`, `ui/node_modules/`, `ui/dist/`)
 
 **Interfaces:**
 - Produces: `just fmt | fmt-check | lint | test | precommit | check | dev | dmg | jitter`. Recipes that need Docker re-run themselves through `docker compose run --rm dev just <recipe>` when `DEEBOO_IN_CONTAINER` is unset. `dev`, `dmg` and `jitter` run on the macOS host and fail with a clear message on any other OS.
+- Produces: `just ship`. It runs `git push -u origin HEAD`, then polls `gh run list --commit $(git rev-parse HEAD) --json databaseId` for up to 60 s until the run exists, then runs `gh run watch --exit-status <id>`. It exits non-zero when CI fails.
+- Produces `ci.yml`, which later tasks extend and never replace:
+  - It runs on `push` (all branches) and on `pull_request` to `main`, with `concurrency` set to cancel superseded runs on the same ref.
+  - Job `linux` builds `docker/Dockerfile` with `docker/build-push-action` and the GHA cache, then runs `docker compose run --rm dev just precommit`. This makes CI identical to the local hook.
+  - Job `macos` (`macos-latest`) installs the toolchain from `rust-toolchain.toml` and `just`, then runs `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`. Task 6 adds the UI and the DMG build to this job.
+  - Pin every action by full commit SHA.
+- Produces `dependabot.yml`: weekly updates for `cargo` (/), `github-actions` (/) and `docker` (/docker). Task 6 adds `npm` (/ui).
 - Produces: crate `clock-core` (lib name `clock_core`) with `pub const PPQN: u64 = 24;` and `pub const SIGNAL_TIMEOUT_US: u64 = 500_000;`.
 
 - [ ] **Step 1: Write `rust-toolchain.toml`.** Pin the exact latest stable version at implementation time (e.g. `channel = "1.NN.0"`) with components `rustfmt` and `clippy`.
@@ -121,7 +133,9 @@ fn constants_match_spec() {
 - [ ] **Step 9: Verify.**
   - Run `docker compose build dev && just precommit` on the host. Expected: rustfmt, clippy, deny and hadolint are clean, and `constants_match_spec ... ok`.
   - Then run `lefthook install` and make an empty test commit. Expected: the hook runs `just precommit`.
-- [ ] **Step 10: Commit** with `chore: dockerised dev environment, workspace and quality gates`.
+- [ ] **Step 10: Write `ci.yml` and `dependabot.yml`.** Validate the workflows with `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:<pinned tag>`. Expected: no output.
+- [ ] **Step 11: Prerequisite (user).** `gh auth status` must show a logged-in account with push access to `rolimat/deeboo-midi-sync`. If it doesn't, stop and ask the user to run `! gh auth login`.
+- [ ] **Step 12: Commit** with `chore: dockerised dev environment, quality gates and CI` on a new branch `feat/v1`, then run `just ship`. Expected: the `linux` and `macos` jobs are both green on GitHub.
 
 ---
 
@@ -182,7 +196,8 @@ The guidance must **not duplicate the spec**. Skills link to spec sections (`doc
 - [ ] **Step 5: Check by hand that disclosure works.**
   - Expected: `wc -l AGENTS.md .claude/skills/*/SKILL.md` stays within budget.
   - Expected: in a fresh Claude Code session in the repo, `/skills` (or the skill listing) shows the 5 project skills.
-- [ ] **Step 6: Commit** with `docs: AGENTS.md/CLAUDE.md, project skills with progressive disclosure, README skeleton`.
+- [ ] **Step 6: Commit** with `docs: AGENTS.md/CLAUDE.md, project skills with progressive disclosure, README skeleton`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 **Maintenance rule** (written into `AGENTS.md`): any task that changes a convention, command or interface updates the matching skill **in the same commit**. Tasks 3–12 must follow it. In particular, Task 11 and Task 12 replace their README placeholders, and Task 11 checks that `dev-workflow/references/ci-and-release.md` matches the real workflows.
 
@@ -261,7 +276,8 @@ impl Engine {
 - [ ] **Step 2: Run** `just test`. Expected: compile errors or FAIL, because `Engine` is not defined.
 - [ ] **Step 3: Implement** `BpmMeter` and `Engine::{new, on_midi, state}` (plus stubs). The parser scans **every byte** of `bytes`. It acts on `0xF8`, `0xFA`, `0xFB` and `0xFC` and ignores everything else. In this task only `0xF8` matters.
 - [ ] **Step 4: Run** `just test`. Expected: all 6 tests PASS, and clippy is clean.
-- [ ] **Step 5: Commit** with `feat(clock-core): clock parsing, BPM meter and input signal state`.
+- [ ] **Step 5: Commit** with `feat(clock-core): clock parsing, BPM meter and input signal state`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -291,7 +307,8 @@ impl Engine {
 - [ ] **Step 2: Run** `just test`. Expected: the new tests FAIL.
 - [ ] **Step 3: Implement** the transport rules above in `engine.rs`.
 - [ ] **Step 4: Run** `just test`. Expected: PASS.
-- [ ] **Step 5: Commit** with `feat(clock-core): play/pause transport, beat counter and clock-loss stop`.
+- [ ] **Step 5: Commit** with `feat(clock-core): play/pause transport, beat counter and clock-loss stop`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -332,7 +349,8 @@ SetNudgeStrength(p): reject p outside 1.0..=10.0 (ignored, keep previous)
 - [ ] **Step 2: Run** `just test`. Expected: FAIL.
 - [ ] **Step 3: Implement** the algorithm above.
 - [ ] **Step 4: Run** `just test`. Expected: all clock-core tests PASS.
-- [ ] **Step 5: Commit** with `feat(clock-core): hold-to-nudge by pulse insertion and dropping`.
+- [ ] **Step 5: Commit** with `feat(clock-core): hold-to-nudge by pulse insertion and dropping`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -341,7 +359,7 @@ SetNudgeStrength(p): reject p outside 1.0..=10.0 (ignored, keep previous)
 **Files:**
 - Create: `ui/package.json`, `ui/vite.config.ts`, `ui/tsconfig.json`, `ui/eslint.config.js`, `ui/.prettierrc`, `ui/index.html`, `ui/src/main.ts`, `ui/src/styles.css`, `ui/src/smoke.test.ts`
 - Create: `src-tauri/Cargo.toml`, `src-tauri/build.rs`, `src-tauri/tauri.conf.json`, `src-tauri/Info.plist`, `src-tauri/capabilities/default.json`, `src-tauri/src/main.rs`, `src-tauri/src/lib.rs`, `src-tauri/icons/*`
-- Modify: `Cargo.toml` (add member), `justfile` (`dev`, `dmg` recipes; `check` builds `ui/dist` before cargo so `generate_context!` compiles in Docker)
+- Modify: `.github/workflows/ci.yml`, `.github/dependabot.yml`, `Cargo.toml` (add member), `justfile` (`dev`, `dmg` recipes; `check` builds `ui/dist` before cargo so `generate_context!` compiles in Docker)
 
 **Interfaces:**
 - Produces: `pub fn run()` in `src-tauri/src/lib.rs`. Window label `"popover"`. Tray id `"main"`.
@@ -361,7 +379,11 @@ SetNudgeStrength(p): reject p outside 1.0..=10.0 (ignored, keep previous)
   - Hide the popover on `WindowEvent::Focused(false)`.
 - [ ] **Step 5: Run** `just precommit` (Docker). Expected: PASS, including `cargo clippy` on `src-tauri` for Linux.
 - [ ] **Step 6: Manual check on macOS** with `just dev`. Expected: an icon appears in the menu bar with no Dock icon. Clicking it shows the dark popover under the icon, and clicking elsewhere hides it.
-- [ ] **Step 7: Commit** with `feat(app): tauri tray app with popover window and ui scaffold`.
+- [ ] **Step 7: Extend CI.**
+  - In `ci.yml` job `macos`: install Node 26, run `npm ci --prefix ui`, then `npm --prefix ui run tauri build -- --bundles dmg`, and upload the `.dmg` as an artifact named `deeboo-dmg`.
+  - Add `npm` (/ui) to `dependabot.yml`.
+  - Re-run actionlint. Expected: no output.
+- [ ] **Step 8: Commit** with `feat(app): tauri tray app with popover window and ui scaffold`, then run `just ship`. Expected: CI is green, and the run has a `deeboo-dmg` artifact.
 
 ---
 
@@ -410,7 +432,8 @@ pub struct BridgeSnapshot { pub state: clock_core::State, pub in_port_ok: bool, 
   - Both ports appear in other apps.
   - With `RUST_LOG=debug`, the app logs BPM once per second (temporary debug log; remove before commit).
   - Pressing nothing sends nothing to the slave.
-- [ ] **Step 7: Commit** with `feat(app): midir virtual ports bridged through clock-core`.
+- [ ] **Step 7: Commit** with `feat(app): midir virtual ports bridged through clock-core`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -451,7 +474,8 @@ pub fn save(path: &Path, s: &Settings) -> std::io::Result<()>;  // write temp fi
 - [ ] **Step 2: Run** `just test`. Expected: FAIL.
 - [ ] **Step 3: Implement** `settings.rs`, `commands.rs` and the emitter thread, then register the commands and the autostart plugin. On startup, load the settings and start the `Bridge` with them.
 - [ ] **Step 4: Run** `just precommit`. Expected: PASS.
-- [ ] **Step 5: Commit** with `feat(app): settings persistence, commands, state event and launch at login`.
+- [ ] **Step 5: Commit** with `feat(app): settings persistence, commands, state event and launch at login`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -496,7 +520,8 @@ export const api: { play(): Promise<void>; pause(): Promise<void>; nudgeStart(d:
 - [ ] **Step 3: Implement** `api.ts`, both views and the CSS, then wire `main.ts`: load the settings, mount the main view, subscribe to state, and let ⚙ swap views.
 - [ ] **Step 4: Run** `just precommit`. Expected: PASS.
 - [ ] **Step 5: Manual check on macOS** with `just dev` and a master and slave connected. Run acceptance tests 2–6 and 8 from spec §10. Expected: all of them behave as described.
-- [ ] **Step 6: Commit** with `feat(ui): main and settings views with hold-to-nudge`.
+- [ ] **Step 6: Commit** with `feat(ui): main and settings views with hold-to-nudge`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
@@ -527,22 +552,19 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
 - [ ] **Step 2: Run** `just test`. Expected: FAIL. Implement it, then run again. Expected: PASS.
 - [ ] **Step 3:** Produce the PNG frames from `vinyl.svg` (any one-off tool; commit the PNGs, not the tool) and wire up the updater.
 - [ ] **Step 4: Manual check on macOS.** Expected: the menu bar shows the vinyl, a dot blinking at the master's tempo and the BPM. The dot turns red within 1 s of stopping the master. Check with both light and dark menu bars.
-- [ ] **Step 5: Commit** with `feat(app): menu bar vinyl icon with beat blink and bpm`.
+- [ ] **Step 5: Commit** with `feat(app): menu bar vinyl icon with beat blink and bpm`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
 
 ---
 
-### Task 11: CI, release pipeline, Dependabot and README
+### Task 11: Release pipeline and README
 
 **Files:**
-- Create: `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/dependabot.yml`
-- Modify: `README.md`, `justfile` (the `dmg` recipe outputs to `target/release/bundle/dmg/`)
+- Create: `.github/workflows/release.yml`
+- Modify: `README.md`, `.claude/skills/dev-workflow/references/ci-and-release.md`, `justfile` (the `dmg` recipe outputs to `target/release/bundle/dmg/`)
 
 **Interfaces:**
-- `ci.yml` runs on push and pull_request to `main`.
-  - Job `linux`: build `docker/Dockerfile` with `docker/build-push-action` and the GHA cache, then run `docker compose run --rm dev just precommit`.
-  - Job `macos` (`macos-latest`): install the toolchain from `rust-toolchain.toml`, Node 26 and `just`. Run `npm ci --prefix ui`, `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace`, then `npm --prefix ui run tauri build -- --bundles dmg`. Upload the `.dmg` as an artifact.
-- `release.yml` runs on tag `v*`. It repeats the macOS build and attaches the `.dmg` to a GitHub Release (`softprops/action-gh-release`). Pin every action by full commit SHA.
-- `dependabot.yml`: weekly updates for `cargo` (/), `npm` (/ui), `github-actions` (/) and `docker` (/docker).
+- `release.yml` runs on tag `v*`. It reuses the macOS build steps from `ci.yml` and attaches the `.dmg` to a GitHub Release (`softprops/action-gh-release`, pinned by SHA). Factor the shared steps into a composite action at `.github/actions/macos-build/action.yml`, used by both `ci.yml` and `release.yml`.
 - README sections:
   - What it is.
   - Install (unsigned):
@@ -550,13 +572,12 @@ pub fn tray_title(bpm: Option<f64>) -> String;   // Some(124.04) → "124.0", No
     2. Open it once. When macOS blocks it, go to *System Settings → Privacy & Security → Open Anyway*.
     3. If macOS says the app "is damaged", run `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`.
   - Usage: point the master's clock output at `Deeboo In` and the slave's clock input at `Deeboo Out`, then press Play on beat 1 of the phrase and nudge with ◀◀/▶▶.
-  - Development: Docker, `just` recipes, hooks (`lefthook install`), macOS-only recipes.
+  - Development: Docker, `just` recipes, hooks (`lefthook install`), macOS-only recipes, `just ship`.
 
-- [ ] **Step 1:** Write the workflows and `dependabot.yml`. Run `docker compose run --rm dev sh -c "hadolint docker/Dockerfile"` and validate the workflow syntax with `actionlint` (run once via its Docker image). Expected: no errors.
+- [ ] **Step 1:** Write the composite action and `release.yml`, then switch `ci.yml` to the composite action. Run actionlint. Expected: no output.
 - [ ] **Step 2:** Run `just dmg` locally. Expected: `target/release/bundle/dmg/Deeboo MIDI Sync_<version>_aarch64.dmg` exists.
 - [ ] **Step 3:** Replace the `TODO(task-11)` placeholders in `README.md` (Install, Usage, Development) and update `.claude/skills/dev-workflow/references/ci-and-release.md` to match the real workflows.
-- [ ] **Step 4:** Push the branch. Expected: both CI jobs are green and the macOS job has a `.dmg` artifact.
-- [ ] **Step 5: Commit** with `ci: linux docker gate, macos dmg build, release on tag, dependabot`.
+- [ ] **Step 4: Commit** with `ci: release on tag, shared macos build action; docs: README install and usage`, then run `just ship`. Expected: CI is green. The release workflow is first exercised when the user tags `v0.1.0`; ask before pushing any tag.
 
 ---
 
@@ -586,4 +607,5 @@ pub fn summarize(intervals_us: &[f64]) -> Option<Stats>;   // None if fewer than
 - [ ] **Step 2: Run** `just test`. Expected: FAIL. Implement it, then run again. Expected: PASS.
 - [ ] **Step 3: Implement** `main.rs` and the `jitter` recipe.
 - [ ] **Step 4: Manual run on macOS** with the procedure above. Record the four numbers in the PR description. If the added jitter is ≥ 1 ms, report it to the user. Do **not** switch to raw CoreMIDI inside this plan, because the user prefers to avoid that.
-- [ ] **Step 5: Commit** with `feat(tools): jitter probe to measure added clock jitter`.
+- [ ] **Step 5: Commit** with `feat(tools): jitter probe to measure added clock jitter`, then run `just ship`. Expected: CI is green.
+, then run `just ship`. Expected: CI is green.
