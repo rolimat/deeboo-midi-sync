@@ -1,0 +1,7 @@
+{
+  "name": "Deeboo MIDI Sync",
+  "dockerComposeFile": ["../compose.yaml"],
+  "service": "dev",
+  "workspaceFolder": "/work",
+  "shutdownAction": "stopCompose"
+}

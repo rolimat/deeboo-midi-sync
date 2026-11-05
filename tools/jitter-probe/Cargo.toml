@@ -1,0 +1,13 @@
+[package]
+name = "jitter-probe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dev tool: measures jitter of incoming MIDI clock"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+midir = "0.10"
