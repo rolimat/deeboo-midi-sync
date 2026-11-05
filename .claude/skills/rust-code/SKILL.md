@@ -19,7 +19,7 @@ description: Use when writing or reviewing Rust in crates/clock-core, src-tauri 
 
 ## App (src-tauri)
 - Commands are snake_case; DTOs are camelCase via serde; state event is `deeboo://state`.
-- Forwarding `0xF8` happens inside the input callback, with the engine lock held only for the engine call and the write; no UI calls, no allocation-heavy work.
+- Forwarding `0xF8` happens inside the input callback, with the engine lock held only for the engine call and the write; no UI calls.
 - Every timestamp comes from the one monotonic clock (`MonoClock`), not midir's.
 - Commands, lock scope and time base: [references/tauri-app.md](references/tauri-app.md) (read when changing `src-tauri`).
 

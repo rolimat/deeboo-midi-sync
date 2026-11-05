@@ -17,7 +17,7 @@ Spec §5 is the source of truth: [docs/superpowers/specs/2026-11-05-deeboo-midi-
 | `0xF2` | SPP (+2 data bytes) | never forwarded |
 
 1 beat = 24 pulses. 125 BPM = 20 000 µs per pulse. Packets may hold several bytes or other
-messages: scan every byte (a `0xF8` inside SysEx still counts only as spec §5.2 says).
+messages: scan every byte.
 
 ## Transport rules (spec §5.2)
 - Starts paused; `playing` changes only on Play/Pause button, incoming Stop, or clock loss.

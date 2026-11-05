@@ -9,7 +9,7 @@ Spec §9.5, §8. Workflows live in `.github/workflows/`.
 - `just ship` waits for the run of the exact pushed commit.
 
 ## Release (planned, Task 11)
-- Tag `vX.Y.Z` on `main` triggers `release.yml`: GitHub Release with the `.dmg` attached.
+- Tag `vX.Y.Z` (`v*`) triggers `release.yml`: GitHub Release with the `.dmg` attached.
 - Dependabot covers cargo, npm and GitHub Actions.
 - Task 11 must check this file against the real workflows and update it.
 
