@@ -8,7 +8,7 @@ err() { echo "agent-docs: $*" >&2; fail=1; }
 
 [ -f AGENTS.md ] || err "AGENTS.md is missing"
 if [ -f AGENTS.md ] && [ "$(wc -l < AGENTS.md)" -gt 80 ]; then err "AGENTS.md is over 80 lines"; fi
-if [ ! -f CLAUDE.md ] || ! grep -qF '@AGENTS.md' CLAUDE.md; then err "CLAUDE.md must contain @AGENTS.md"; fi
+if [ "$(readlink CLAUDE.md)" != AGENTS.md ]; then err "CLAUDE.md must be a symlink to AGENTS.md"; fi
 
 shopt -s nullglob
 skills=(.claude/skills/*/SKILL.md)
