@@ -64,7 +64,7 @@ pub fn validate(s: Settings) -> Result<Settings, String> {
     })
 }
 
-/// A missing or corrupt file gives the defaults.
+/// A missing, corrupt or invalid file gives the defaults.
 #[must_use]
 pub fn load(path: &Path) -> Settings {
     let text = match fs::read_to_string(path) {
@@ -76,8 +76,15 @@ pub fn load(path: &Path) -> Settings {
             return Settings::default();
         }
     };
-    serde_json::from_str(&text).unwrap_or_else(|e| {
-        log::warn!("corrupt settings file {}: {e}", path.display());
+    let parsed = match serde_json::from_str(&text) {
+        Ok(parsed) => parsed,
+        Err(e) => {
+            log::warn!("corrupt settings file {}: {e}", path.display());
+            return Settings::default();
+        }
+    };
+    validate(parsed).unwrap_or_else(|e| {
+        log::warn!("invalid settings file {}: {e}", path.display());
         Settings::default()
     })
 }
@@ -178,5 +185,29 @@ mod tests {
         save(&path, &s).unwrap();
         assert_eq!(load(&path), s);
         assert!(!path.with_extension("json.tmp").exists());
+    }
+
+    #[test]
+    fn load_out_of_range_strength_gives_defaults() {
+        let path = temp_path("range");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(
+            &path,
+            r#"{"inputName":"A","outputName":"B","nudgeStrengthPct":10000,"launchAtLogin":false}"#,
+        )
+        .unwrap();
+        assert_eq!(load(&path), Settings::default());
+    }
+
+    #[test]
+    fn load_overlong_name_gives_defaults() {
+        let path = temp_path("longname");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let json = format!(
+            r#"{{"inputName":"{}","outputName":"B","nudgeStrengthPct":4,"launchAtLogin":false}}"#,
+            "x".repeat(100)
+        );
+        fs::write(&path, json).unwrap();
+        assert_eq!(load(&path), Settings::default());
     }
 }

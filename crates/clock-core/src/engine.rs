@@ -63,8 +63,14 @@ pub struct Engine {
 impl Engine {
     #[must_use]
     pub fn new(nudge_strength_pct: f64) -> Self {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // clamped below
-        let strength_hundredths = (nudge_strength_pct * 100.0).round().clamp(0.0, 1e6) as u32;
+        // Same bounds as `SetNudgeStrength`; keeps the u32 accumulator from overflowing.
+        let pct = if nudge_strength_pct.is_finite() {
+            nudge_strength_pct.clamp(1.0, 10.0)
+        } else {
+            4.0
+        };
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 100..=1000
+        let strength_hundredths = (pct * 100.0).round() as u32;
         Self {
             meter: BpmMeter::default(),
             last_clock_us: None,

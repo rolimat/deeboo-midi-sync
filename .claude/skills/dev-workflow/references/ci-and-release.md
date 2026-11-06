@@ -10,7 +10,9 @@ Spec §9.5, §8. Workflows live in `.github/workflows/`.
 - `changes` (`dorny/paths-filter`) gates `macos`: it runs only when `src-tauri/**`, `tools/**`, `ui/**`, `Cargo.lock`, `rust-toolchain.toml`, `.github/workflows/**` or `.github/actions/**` change. PRs to `main` always run it. Pushes compare against the previous commit on the same branch (`base: github.ref`), not `main`. Update the filter list here when a new build input appears.
 
 ## Release (`release.yml`)
-- Tag `vX.Y.Z` (`v*`) triggers it on `macos-latest` with `contents: write`: checkout, the same `macos-build` composite action, then `softprops/action-gh-release` (pinned by SHA) attaches `target/release/bundle/dmg/*.dmg` to the GitHub Release. Never push a tag without asking the user.
+- Tag `vX.Y.Z` (`v*`) triggers two jobs; top-level `permissions: {}`, every `actions/checkout` uses `persist-credentials: false`. Never push a tag without asking the user.
+  - `build` (`macos-latest`, `contents: read`): checkout, the `macos-build` composite action, uploads the DMG as artifact `dmg`. Build steps never see a write token.
+  - `publish` (`ubuntu-latest`, `needs: build`, `contents: write`, `id-token: write`, `attestations: write`): no checkout, no build. Downloads `dmg`, writes `SHA256SUMS` (`sha256sum -- *.dmg`), `actions/attest-build-provenance` attests the DMG, then `softprops/action-gh-release` (all pinned by SHA) attaches the DMG and `SHA256SUMS`. Users verify with `shasum -a 256 -c SHA256SUMS` or `gh attestation verify`.
 - `.github/dependabot.yml`: weekly `cargo` (/), `npm` (/ui), `github-actions` (/), `docker` (/docker); minor and patch updates are grouped per ecosystem.
 - Local `just dmg` can fail at create-dmg's Finder AppleScript step in non-GUI sessions; `CI=true just dmg` skips the styling.
 

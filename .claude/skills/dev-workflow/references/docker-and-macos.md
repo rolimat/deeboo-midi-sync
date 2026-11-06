@@ -1,7 +1,7 @@
 # Docker and macOS
 
 ## Docker
-- `docker/Dockerfile`: `rust:1.99.1-bookworm`, Node 26 (NodeSource), Tauri/ALSA system libs, pinned `just`, `cargo-deny`, `lefthook`, `hadolint` (arch-aware: arm64 locally, amd64 on CI). Linted by hadolint (`.hadolint.yaml`).
+- `docker/Dockerfile`: `rust:1.99.1-bookworm`, Tauri/ALSA system libs, pinned Node 26 tarball, `just`, `cargo-deny`, `lefthook`, `hadolint` (arch-aware: arm64 locally, amd64 on CI). Every download is checked with a SHA-256 `ARG` from the upstream checksum file; update version and sums together. Linted by hadolint (`.hadolint.yaml`).
 - `compose.yaml`: service `dev`, image `deeboo-dev`, repo mounted at `/work`, named volumes for the cargo registry, `target/` and `ui/node_modules`; `command: sleep infinity`. `.devcontainer/devcontainer.json` opens the repo in the same image.
 - Toolchain pinned in `rust-toolchain.toml` (with rustfmt, clippy); change it and the Dockerfile together.
 - Rebuild after Dockerfile changes: `docker compose build dev`.

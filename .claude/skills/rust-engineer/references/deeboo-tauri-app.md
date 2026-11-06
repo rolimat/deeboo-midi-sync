@@ -4,7 +4,7 @@
 - JS-visible command names: `play`, `pause`, `nudge_start(direction: "push" | "slow")`, `nudge_stop`, `get_settings`, `save_settings`, `quit`.
 - State event: `deeboo://state` at about 30 Hz, payload `StateDto` with camelCase fields: `bpm`, `beat`, `playing`, `inOk`, `outOk`, `inputBeats`.
 - `inOk = state.in_ok && in_port_ok`; `outOk = state.playing && out_port_ok`.
-- `Settings` is camelCase JSON in `app_config_dir()/settings.json`; `validate` trims names (empty or > 63 chars is an error) and rejects strength outside 1.0-10.0; `save` writes a temp file then renames.
+- `Settings` is camelCase JSON in `app_config_dir()/settings.json`; `validate` trims names (empty or > 63 chars is an error) and rejects strength outside 1.0-10.0; `load` runs `validate` and falls back to defaults (with `log::warn!`) on an invalid file, and `Engine::new` clamps strength to 1.0-10.0 (non-finite gives 4.0); `save` writes a temp file then renames.
 - Popover hiding (`Focused(false)`) sends `NudgeStop`.
 
 ## Lock scope in the MIDI callback
