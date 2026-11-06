@@ -25,7 +25,10 @@
         "skipTaskbar": true
       }
     ],
-    "security": { "csp": null }
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost; style-src 'self'; script-src 'self'",
+      "devCsp": "default-src 'self' http://localhost:5173; connect-src ipc: http://ipc.localhost ws://localhost:5173 http://localhost:5173; img-src 'self' asset: http://asset.localhost; style-src 'self' http://localhost:5173 'unsafe-inline'; script-src 'self' http://localhost:5173 'unsafe-inline'"
+    }
   },
   "bundle": {
     "active": true,
