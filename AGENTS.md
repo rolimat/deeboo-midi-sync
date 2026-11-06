@@ -10,6 +10,14 @@ just dmg         # macOS host: build the .dmg (use CI=true in non-GUI sessions)
 just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measure clock jitter
 ```
 
+# TDD (mandatory)
+
+- Every behaviour change starts with a failing test: write it, run it, see it fail (red),
+  then write the minimum code to pass (green), then refactor.
+- No production code without a test that exercised it first. Bug fixes start with a test
+  that reproduces the bug.
+- Where tests go and how (simulated time, mocked UI api): `writing-tests` skill.
+
 # Architecture
 
 - macOS menu bar app: Tauri 2 + Rust + midir; UI in TypeScript + Vite, plain CSS (no frameworks).
@@ -37,8 +45,8 @@ just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measu
 .claude/skills/
 ├── midi-clock-domain/      # clock bytes, transport, BPM, nudge, beat counter
 │   └── references/transport-and-nudge.md
-├── rust-code/              # Rust in crates/, src-tauri/, tools/
-│   └── references/{clock-core.md, tauri-app.md}
+├── rust-engineer/          # Rust in crates/, src-tauri/, tools/ (adapted from Jeffallan, MIT)
+│   └── references/{ownership, traits, error-handling, testing, deeboo-clock-core, deeboo-tauri-app}.md
 ├── writing-tests/          # TDD, simulated time, Vitest with mocked api
 │   └── references/{rust-simulated-time.md, ui-vitest.md}
 ├── ui-code/                # anything in ui/: views, styles, copy
