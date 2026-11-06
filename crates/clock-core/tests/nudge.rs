@@ -85,3 +85,16 @@ fn strength_outside_range_is_ignored() {
     e.on_command(T0, Command::NudgeStart(Direction::Push));
     assert_eq!(run_with_ticks(&mut e, T0, 100, IV), 110);
 }
+
+#[test]
+fn new_clamps_out_of_range_strength() {
+    let mut huge = Engine::new(1e6);
+    huge.on_command(T0, Command::Play);
+    huge.on_command(T0, Command::NudgeStart(Direction::Push));
+    assert_eq!(run_with_ticks(&mut huge, T0, 100, IV), 110);
+
+    let mut nan = Engine::new(f64::NAN);
+    nan.on_command(T0, Command::Play);
+    nan.on_command(T0, Command::NudgeStart(Direction::Push));
+    assert_eq!(run_with_ticks(&mut nan, T0, 100, IV), 104);
+}
