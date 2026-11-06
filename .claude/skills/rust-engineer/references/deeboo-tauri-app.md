@@ -10,7 +10,9 @@
 ## Lock scope in the MIDI callback
 Shared `Arc<Mutex<Engine>>` and `Arc<Mutex<Option<MidiOutputConnection>>>`. The input callback calls
 `on_midi(clock.now_us(), msg)` and writes `Output.send` inside the callback, with no UI or channel
-hop. `command()` and the timer thread do the same. A failed port creation logs `log::error!` and
+hop. `command()` and the timer thread do the same, all through `Shared::run`, which writes to Out
+while still holding the engine lock so bytes leave in engine order. Lock order is always
+engine → out; `rename_ports` never takes the engine lock. A failed port creation logs `log::error!` and
 clears that port's ok flag; it never panics.
 
 ## Time base

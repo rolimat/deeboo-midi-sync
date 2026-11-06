@@ -1,5 +1,10 @@
 # Ownership, Borrowing, and Lifetimes
 
+> Generic reference adapted from Jeffallan/claude-skills (MIT), trimmed for this project.
+> The project overrides in [../SKILL.md](../SKILL.md) win over anything here.
+
+> Shared state across threads here is `Arc<Mutex<T>>` (bridge, timer and emitter threads); no async, so no `Pin`.
+
 ## Ownership Patterns
 
 ```rust
@@ -88,7 +93,7 @@ shared.borrow_mut().push(4);
 let counter = Arc::new(Mutex::new(0));
 let counter_clone = Arc::clone(&counter);
 std::thread::spawn(move || {
-    let mut num = counter_clone.lock().unwrap();
+    let mut num = counter_clone.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     *num += 1;
 });
 ```
@@ -124,47 +129,6 @@ impl MockLogger {
     fn get_messages(&self) -> Vec<String> {
         self.messages.borrow().clone()
     }
-}
-```
-
-## Pin and Self-Referential Types
-
-```rust
-use std::pin::Pin;
-use std::marker::PhantomPinned;
-
-// Self-referential struct (requires Pin)
-struct SelfReferential {
-    data: String,
-    pointer: *const String,
-    _pin: PhantomPinned,
-}
-
-impl SelfReferential {
-    fn new(data: String) -> Pin<Box<Self>> {
-        let mut boxed = Box::pin(Self {
-            data,
-            pointer: std::ptr::null(),
-            _pin: PhantomPinned,
-        });
-
-        // Safe: we're not moving the data after this
-        let ptr = &boxed.data as *const String;
-        unsafe {
-            let mut_ref = Pin::as_mut(&mut boxed);
-            Pin::get_unchecked_mut(mut_ref).pointer = ptr;
-        }
-
-        boxed
-    }
-}
-
-// Pin in async contexts
-async fn pinned_future() {
-    // Futures are often self-referential, hence Pin
-    let fut = async { 42 };
-    let pinned = Box::pin(fut);
-    pinned.await;
 }
 ```
 

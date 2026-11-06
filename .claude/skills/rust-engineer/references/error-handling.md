@@ -1,5 +1,10 @@
 # Error Handling in Rust
 
+> Generic reference adapted from Jeffallan/claude-skills (MIT), trimmed for this project.
+> The project overrides in [../SKILL.md](../SKILL.md) win over anything here.
+
+> This project uses `thiserror` only where an error type is needed; no `anyhow`.
+
 ## Result and Option Basics
 
 ```rust
@@ -83,8 +88,8 @@ enum DataError {
     #[error("Parse error")]
     Parse(#[from] std::num::ParseIntError),
 
-    #[error("Database error: {0}")]
-    Database(#[from] sqlx::Error),
+    #[error("Invalid UTF-8")]
+    Utf8(#[from] std::str::Utf8Error),
 }
 
 // Usage with automatic conversions
@@ -92,34 +97,6 @@ fn read_config(path: &str) -> Result<Config, DataError> {
     let content = std::fs::read_to_string(path)?;  // Auto-converts io::Error
     let port: u16 = content.parse()?;  // Auto-converts ParseIntError
     Ok(Config { port })
-}
-```
-
-## Using anyhow for Applications
-
-```rust
-use anyhow::{Result, Context, bail, ensure};
-
-// Simple error handling for applications
-fn process_file(path: &str) -> Result<()> {
-    let content = std::fs::read_to_string(path)
-        .context(format!("Failed to read file: {}", path))?;
-
-    ensure!(!content.is_empty(), "File is empty");
-
-    if content.len() > 1000 {
-        bail!("File too large");
-    }
-
-    // Process content...
-    Ok(())
-}
-
-// Adding context to errors
-fn main() -> Result<()> {
-    process_file("config.txt")
-        .context("Failed to process configuration")?;
-    Ok(())
 }
 ```
 
@@ -183,7 +160,7 @@ let result = Err("error").or_else(|_| Ok(42));  // Ok(42)
 let value = Err("error").unwrap_or(42);  // 42
 
 // expect: unwrap with custom panic message
-let value = result.expect("Failed to parse number");
+let value = result.expect("Failed to parse number"); // tests only in this project
 
 // Pattern matching
 match divide(10.0, 2.0) {
@@ -236,7 +213,7 @@ fn complex_operation() -> Result<String, Box<dyn Error>> {
     Ok(format!("Number: {}", number))
 }
 
-// Error with backtrace (nightly)
+// Error with backtrace (std::backtrace, stable)
 #[derive(Debug)]
 struct DetailedError {
     message: String,
@@ -262,19 +239,6 @@ fn might_fail(value: i32) -> Result<i32, String> {
         Ok(value * 2)
     }
 }
-```
-
-## Try Blocks (Nightly)
-
-```rust
-#![feature(try_blocks)]
-
-// Try block for localized error handling
-let result: Result<i32, Box<dyn Error>> = try {
-    let file = std::fs::read_to_string("config.txt")?;
-    let num: i32 = file.trim().parse()?;
-    num * 2
-};
 ```
 
 ## Error Context Pattern
@@ -320,9 +284,8 @@ impl<T, E: Error + Send + Sync + 'static> Context<T> for Result<T, E> {
 
 - Use Result for recoverable errors, panic! for unrecoverable bugs
 - Prefer ? operator over unwrap() in production code
-- Use expect() with descriptive messages instead of unwrap()
+- Outside tests, never unwrap()/expect(): log or return the error
 - Use thiserror for libraries (structured errors)
-- Use anyhow for applications (simple error handling)
 - Implement std::error::Error trait for custom error types
 - Add context to errors as they propagate up the stack
 - Use #[from] in thiserror for automatic conversions
@@ -330,5 +293,4 @@ impl<T, E: Error + Send + Sync + 'static> Context<T> for Result<T, E> {
 - Use Option::ok_or() to convert Option to Result
 - Use Result::ok() to convert Result to Option (discarding error)
 - Avoid String as error type (use custom types instead)
-- Use ensure! and bail! from anyhow for cleaner checks
 - Log errors at boundaries, return them in library code

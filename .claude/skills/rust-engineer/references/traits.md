@@ -1,5 +1,8 @@
 # Traits, Generics, and Type System
 
+> Generic reference adapted from Jeffallan/claude-skills (MIT), trimmed for this project.
+> The project overrides in [../SKILL.md](../SKILL.md) win over anything here.
+
 ## Basic Trait Definition
 
 ```rust
@@ -374,28 +377,6 @@ impl TryFrom<i64> for UserId {
             Ok(UserId(value as u64))
         }
     }
-}
-```
-
-## Const Traits (Nightly)
-
-```rust
-// Const trait implementations (requires nightly)
-#![feature(const_trait_impl)]
-
-#[const_trait]
-trait ConstAdd {
-    fn add(self, other: Self) -> Self;
-}
-
-impl const ConstAdd for i32 {
-    fn add(self, other: Self) -> Self {
-        self + other
-    }
-}
-
-const fn compute() -> i32 {
-    5.add(10)  // Can use in const context
 }
 ```
 
