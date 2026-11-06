@@ -3,6 +3,17 @@
 <img src="screenshots/main_screen.png" width="300" alt="Main popover"> <img src="screenshots/config_screen.png" width="300" alt="Settings">
 
 
+## Why it exists
+Traktor and Ableton Live can already stay in sync, over MIDI clock or Ableton Link, but only
+when the Traktor decks run with **SYNC** engaged. That works for controller DJs, not for people
+who mix the old way: with **Traktor Scratch timecode vinyl** or **CDJs controlling Traktor**, riding
+the pitch by hand and never pressing SYNC. As soon as the tracks are beatmatched by ear, the clock
+Traktor sends no longer lines up with the phrase Ableton is playing.
+
+Deeboo MIDI Sync sits between the two. Traktor keeps sending its MIDI clock for tempo. Deeboo lets
+you decide when Ableton starts (press Play on beat 1 of the phrase) and nudge it earlier or later
+by hand, like pushing a record, until both are locked. No SYNC button needed on the Traktor side.
+
 ## What it is
 A macOS menu bar app that relays MIDI clock from a master to a slave, with Play/Pause and a
 hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports, `Deeboo Clock Sync In` and
