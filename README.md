@@ -21,12 +21,13 @@ hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports
 
 ## Install
 Download the `.dmg` from the GitHub Releases page. The app is ad-hoc signed (since 0.1.1) but not notarized, so macOS shows an "unidentified developer" warning the first time.
-1. Open the DMG and drag the app to Applications.
-2. Open it once. macOS blocks it and shows a warning: click **Done** (not "Move to Bin").
-3. Open **System Settings → Privacy & Security** (or search "Security" in System Settings) and scroll down to the **Security** section.
-4. Under "Allow applications from" you will see *"Deeboo MIDI Sync" was blocked to protect your Mac*. Click **Open Anyway**, then confirm with your password or Touch ID.
-5. Open the app again and click **Open** in the last dialog. macOS remembers the choice; you only do this once per version.
-6. Fallback: if macOS still says the app "is damaged", run:
+1. **Verify the download (recommended).** Download `SHA256SUMS` from the same release into the same folder as the DMG and run `shasum -a 256 -c SHA256SUMS`, or run `gh attestation verify "Deeboo.MIDI.Sync_<version>_aarch64.dmg" --repo rolimat/deeboo-midi-sync`. Only continue to **Open Anyway** or `xattr` below if verification passes.
+2. Open the DMG and drag the app to Applications.
+3. Open it once. macOS blocks it and shows a warning: click **Done** (not "Move to Bin").
+4. Open **System Settings → Privacy & Security** (or search "Security" in System Settings) and scroll down to the **Security** section.
+5. Under "Allow applications from" you will see *"Deeboo MIDI Sync" was blocked to protect your Mac*. Click **Open Anyway**, then confirm with your password or Touch ID.
+6. Open the app again and click **Open** in the last dialog. macOS remembers the choice; you only do this once per version.
+7. Fallback: if macOS still says the app "is damaged", run:
    `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`
 
 ## Usage
