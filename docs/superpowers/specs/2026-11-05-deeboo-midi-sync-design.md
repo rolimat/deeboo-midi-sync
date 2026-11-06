@@ -209,6 +209,9 @@ ui/                  # Frontend TS + Vite
 - **Firma ad-hoc desde 0.1.1 (`signingIdentity` = `"-"`), sin notarización.** El README explica la instalación: arrastrar a Aplicaciones;
   al abrir, *Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente*; si macOS dice
   que está "dañada": `xattr -dr com.apple.quarantine "/Applications/Deeboo MIDI Sync.app"`.
+- **Descargas verificables:** el workflow de release se divide en `build` (solo lectura, sin token de escritura) y `publish`
+  (sin checkout ni build). `publish` genera `SHA256SUMS`, una atestación de procedencia (`actions/attest-build-provenance`)
+  y adjunta ambos junto al `.dmg`. El README pide verificar (`shasum -a 256 -c SHA256SUMS` o `gh attestation verify`) antes de saltarse Gatekeeper.
 
 ## 9. Entorno de desarrollo y calidad
 
