@@ -1,6 +1,6 @@
 # Transport and nudge detail
 
-Spec: §5.2 (transport), §5.3 (nudge), §5.4 (BPM). Plan: Tasks 3-5.
+Spec: §5.2 (transport), §5.3 (nudge), §5.4 (BPM).
 
 ## BPM
 `bpm = 60e6 / (24 * mean_interval_us)` over the last 24 intervals. Intervals <= 0 are ignored, so

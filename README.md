@@ -1,5 +1,8 @@
 # Deeboo MIDI Sync
 
+<img src="screenshots/main_screen.png" width="300" alt="Main popover"> <img src="screenshots/config_screen.png" width="300" alt="Settings">
+
+
 ## What it is
 A macOS menu bar app that relays MIDI clock from a master to a slave, with Play/Pause and a
 hold-to-nudge "vinyl" push to line up phase by ear. It exposes two virtual ports, `Deeboo Clock Sync In` and

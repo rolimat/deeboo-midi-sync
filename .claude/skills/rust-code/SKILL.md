@@ -27,4 +27,4 @@ description: Use when writing or reviewing Rust in crates/clock-core, src-tauri 
 - [ ] `clock-core` imports nothing impure.
 - [ ] No `unwrap`/`expect`/indexing panics on external input.
 - [ ] `just precommit` clean (clippy, fmt, deny).
-- [ ] Interface change: update the reference and the plan-linked skill in the same commit.
+- [ ] Interface change: update the reference and the matching skill in the same commit.

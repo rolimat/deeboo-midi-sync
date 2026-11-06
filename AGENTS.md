@@ -1,53 +1,71 @@
-# Deeboo MIDI Sync: agent guide
+# Useful commands
 
-## Project
-macOS menu bar app (Tauri 2 + Rust + midir) that relays MIDI clock from a master to a slave with
-Play/Pause and hold-to-nudge. Pure logic lives in `crates/clock-core`. Open a skill (below) before
-working in its area; do not re-read the whole spec.
-Spec: `docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md` (Spanish).
-Plan: `docs/superpowers/plans/2026-11-05-deeboo-midi-sync.md`.
+```sh
+just precommit   # fmt-check + lint + tests, inside Docker (the pre-commit hook runs this)
+just fmt         # format Rust + UI
+just test        # Rust + Vitest tests (Docker)
+just lint        # clippy -D warnings, cargo-deny, hadolint, eslint, tsc, agent-docs budget
+just dev         # macOS host: run the app with real MIDI (hot reload)
+just dmg         # macOS host: build the .dmg (use CI=true in non-GUI sessions)
+just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measure clock jitter
+```
 
-## Hard rules
-- App text is English; never name third-party software (Traktor, Ableton...).
-- Ports default `Deeboo Clock Sync In` (virtual destination) / `Deeboo Clock Sync Out` (virtual source).
-- 24 PPQN; `0xF8` clock, `0xFA` Start, `0xFB` Continue, `0xFC` Stop, `0xF2` SPP.
-- No clock for 500 ms = no signal. Deeboo starts paused.
-- Only Deeboo's Play starts the slave; incoming Start/Continue/SPP are never forwarded.
-- Incoming Stop or clock loss while playing: send one `Stop`, pause.
-- Nudge default 4 %, range 1-10 %. BPM has 1 decimal, `—` without signal.
-- Popover: icon-only buttons; port rows are dot + `In · name` / `Out · name`.
-- No Dock icon (`Accessory` + `LSUIElement`). Ad-hoc signed (0.1.1+), no notarization.
-- Plain CSS custom properties and plain TS: no CSS or UI framework.
-- One monotonic µs clock feeds `clock-core`; never mix in midir timestamps.
+# Architecture
+
+- macOS menu bar app: Tauri 2 + Rust + midir; UI in TypeScript + Vite, plain CSS (no frameworks).
+- `crates/clock-core/`: pure, deterministic clock engine (parser, BPM, transport, nudge). No I/O, no real time.
+- `src-tauri/`: midir virtual ports bridge, timer thread, settings, Tauri commands, tray.
+- `ui/`: popover and settings views. `tools/jitter-probe/`: jitter measurement binary.
 - Everything except real MIDI, the DMG and the jitter probe runs in Docker.
-- Work on `feat/v1`, never `main`. Never `--no-verify`.
 
-## Commands
-Docker (re-exec themselves via `docker compose run`): `just fmt`, `fmt-check`, `lint`, `test`,
-`precommit` (= `check`).
-macOS host only: `just dev`, `just dmg`, `just jitter`.
-`just ship`: push and wait for the CI run of this commit.
+# Golden rules
 
-## Layout
-- `crates/clock-core/` pure engine: parser, BPM, transport, nudge (tests in `tests/`)
-- `src-tauri/` app: midir bridge, settings, commands, tray
-- `ui/` TypeScript + Vite popover, Vitest tests next to sources
-- `tools/jitter-probe/` macOS jitter measurement binary
-- `docker/`, `compose.yaml`, `justfile`, `lefthook.yml`, `.github/` dev environment and CI
-- `.claude/skills/` skills; `scripts/check-agent-docs.sh` enforces budgets
+- App text is English and never names third-party software.
+- Ports: `Deeboo Clock Sync In` (virtual destination) / `Deeboo Clock Sync Out` (virtual source).
+- Only Deeboo's Play starts the slave; incoming Start/Continue/SPP are never forwarded.
+  Incoming Stop or 500 ms without clock while playing → one `Stop`, pause.
+- One monotonic µs clock feeds `clock-core`; never mix in midir timestamps.
+- Never `--no-verify`. Never write DOM under the pointer on every state tick.
 
-## Skills index
-Claude Code loads these from `.claude/skills/`. Other agents: open the `SKILL.md` when "when" matches.
-| Skill | When |
-|---|---|
-| `midi-clock-domain` | clock bytes, transport, BPM, nudge, beat counter |
-| `rust-code` | Rust in `crates/` or `src-tauri/` |
-| `writing-tests` | any feature or bug fix, any language |
-| `ui-code` | anything in `ui/` |
-| `dev-workflow` | setup, commands, hooks, CI, releasing |
+# Documentation
 
-## Done means
-- `just precommit` is green and tests were written first (red, then green).
-- Commit follows Conventional Commits; then `just ship` and CI is green.
-- Maintenance: any change to a convention, command or interface updates the matching skill in the
-  same commit.
+- Spec (Spanish): `docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md`
+- Detailed conventions live in skills. Use this map and read only what your task needs
+  (Claude Code loads them automatically; other agents open the `SKILL.md` first):
+
+```
+.claude/skills/
+├── midi-clock-domain/      # clock bytes, transport, BPM, nudge, beat counter
+│   └── references/transport-and-nudge.md
+├── rust-code/              # Rust in crates/, src-tauri/, tools/
+│   └── references/{clock-core.md, tauri-app.md}
+├── writing-tests/          # TDD, simulated time, Vitest with mocked api
+│   └── references/{rust-simulated-time.md, ui-vitest.md}
+├── ui-code/                # anything in ui/: views, styles, copy
+│   └── references/styles-and-copy.md
+└── dev-workflow/           # Docker vs macOS, hooks, CI, releases
+    └── references/{docker-and-macos.md, ci-and-release.md}
+```
+
+# Plans
+
+- New feature or behaviour change: brainstorm first, then write the spec in
+  `docs/superpowers/specs/` and the plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`.
+- Specs are committed. Plans are never committed (`docs/superpowers/plans/` is git-ignored).
+- **Plan-only prompts** ("crea un plan para…", "create a plan for…", "diseña…"): only write the
+  plan document. Do not change code, run the app or tag anything.
+- **Implement** only when explicitly asked ("implementa el plan", "ejecuta el plan").
+
+# Git, CI and releases
+
+- Work on a feature branch and open a PR to `main`. Push straight to `main` only when the user says so.
+- After each commit: push, then watch CI without blocking. The macOS job runs only when
+  `src-tauri/`, `ui/`, `tools/`, `Cargo.lock` or workflows change; PRs always run it.
+- Release: bump the version in `src-tauri/tauri.conf.json`, `ui/package.json` and `Cargo.toml`, merge to `main`,
+  then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`. Ask before pushing any tag.
+
+# Done means
+
+- Tests written first (red, then green) and `just precommit` green.
+- Conventional Commits.
+- Any change to a convention, command or interface updates its skill in the same commit.
