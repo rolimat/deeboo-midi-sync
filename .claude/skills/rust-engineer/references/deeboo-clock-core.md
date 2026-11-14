@@ -11,7 +11,8 @@ on_tick(now_us) -> Output                     // due extra pulse, signal-loss St
 next_deadline_us() -> Option<u64>             // earliest of extra pulse and signal-loss deadline
 state(now_us) -> State { bpm, beat, playing, in_ok, input_beats }
 ```
-`Output { send: Vec<u8> }` holds bytes in order. `BpmMeter` is `pub(crate)` in `bpm.rs`.
+`Output { send: Vec<TimedByte> }` holds bytes in order; `TimedByte { at_us, byte }`; `Output::bytes()` drops the stamps.
+Stamps never decrease (`last_out_us`, applied in `emit`). `on_midi`'s `now_us` is the packet time: forwarded `0xF8`/`0xFC` keep it; `Start`/`Stop` from commands use the command time; the loss `Stop` uses the tick time; the extra pulse uses its `pending_extra` due time (spec §5.3). `BpmMeter` is `pub(crate)` in `bpm.rs`.
 Signal timeout constant: `SIGNAL_TIMEOUT_US` = 500 000.
 
 ## Adding a state field

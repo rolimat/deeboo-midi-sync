@@ -57,7 +57,7 @@ impl Shared {
         let mut guard = lock(&self.out);
         if let Some(conn) = guard.as_mut() {
             for b in &output.send {
-                if let Err(e) = conn.send(&[*b]) {
+                if let Err(e) = conn.send(&[b.byte]) {
                     log::warn!("cannot write to Out: {e}");
                 }
             }

@@ -5,7 +5,7 @@ use clock_core::Engine;
 pub fn clock_pulses(e: &mut Engine, start_us: u64, n: u64, interval_us: u64) -> Vec<u8> {
     let mut out = Vec::new();
     for i in 0..n {
-        out.extend(e.on_midi(start_us + i * interval_us, &[0xF8]).send);
+        out.extend(e.on_midi(start_us + i * interval_us, &[0xF8]).bytes());
     }
     out
 }
@@ -20,10 +20,10 @@ pub fn run_with_ticks(e: &mut Engine, start_us: u64, n: u64, interval_us: u64) -
     for i in 0..=n {
         let t = start_us + i * interval_us;
         while let Some(d) = e.next_deadline_us().filter(|&d| d < t) {
-            count += count_clocks(&e.on_tick(d).send);
+            count += count_clocks(&e.on_tick(d).bytes());
         }
         if i < n {
-            count += count_clocks(&e.on_midi(t, &[0xF8]).send);
+            count += count_clocks(&e.on_midi(t, &[0xF8]).bytes());
         }
     }
     count
