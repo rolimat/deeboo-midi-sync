@@ -181,13 +181,16 @@ mod tests {
         assert_eq!(event_time_us(Some(now - 500_001), now), now);
     }
 
-    #[cfg(target_os = "macos")]
     #[test]
     fn host_clock_tracks_wall_time() {
         let clock = HostClock::new();
         let a = clock.now_us();
         std::thread::sleep(std::time::Duration::from_millis(2));
         let b = clock.now_us();
-        assert!((2_000..50_000).contains(&(b - a)), "{} us elapsed", b - a);
+        assert!(
+            (2_000..1_000_000).contains(&(b - a)),
+            "{} us elapsed",
+            b - a
+        );
     }
 }

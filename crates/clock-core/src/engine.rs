@@ -24,7 +24,7 @@ pub enum Command {
     SetNudgeStrength(f64),
 }
 
-/// One byte for Out and the monotonic time (µs) it should leave at.
+/// One byte for Out and its timestamp (µs, the engine's clock).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TimedByte {
     pub at_us: u64,
@@ -123,7 +123,9 @@ impl Engine {
             match b {
                 CLOCK => {
                     self.on_clock(now_us);
-                    if self.playing && self.nudge_forwards(now_us) {
+                    // A pulse stamped before Play happened before it: measured, never forwarded.
+                    if self.playing && now_us >= self.play_started_us && self.nudge_forwards(now_us)
+                    {
                         self.out_pulses += 1;
                         self.emit(&mut out, now_us, CLOCK);
                     }

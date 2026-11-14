@@ -109,8 +109,8 @@ compensa el job macOS de CI, que ya ejecuta clippy y tests de todo el workspace.
   - `Start`/`Stop` de Play/Pause: el `now_us` del comando;
   - `Stop` por pérdida de señal: el `now_us` del tick.
 - Invariante: las marcas de salida no decrecen. El motor recuerda la última marca emitida y sube
-  cualquier marca menor hasta ella (p. ej. un pulso marcado 50 µs antes del `Start` de un Play
-  recién pulsado sale con la marca del `Start`).
+  cualquier marca menor hasta ella. Un pulso marcado antes del Play (ocurrió antes de pulsarlo) no se
+  reenvía; el esclavo arranca con el siguiente.
 - `on_midi(at_us, bytes)` conserva su firma: `at_us` es la única hora que usa, también para el
   `on_tick` interno que vacía el pulso extra pendiente. La pérdida de señal la sigue vigilando el hilo
   temporizador con la hora real. `at_us` puede ser algo anterior al último `on_tick(now)` (las marcas

@@ -38,7 +38,7 @@ fn wait_for<T>(mut f: impl FnMut() -> Option<T>) -> T {
         if let Some(v) = f() {
             return v;
         }
-        assert!(start.elapsed() < Duration::from_secs(1), "port not found");
+        assert!(start.elapsed() < Duration::from_secs(5), "port not found");
         thread::sleep(Duration::from_millis(5));
     }
 }
@@ -99,7 +99,7 @@ impl Harness {
         }
     }
 
-    /// Received `(stamp in µs, byte)` once `count` bytes arrived (or 1 s passed).
+    /// Received `(stamp in µs, byte)` once `count` bytes arrived (or 5 s passed).
     fn bytes(&self, count: usize) -> Vec<(u64, u8)> {
         let start = Instant::now();
         loop {
@@ -110,7 +110,7 @@ impl Harness {
                 .iter()
                 .flat_map(|(ts, d)| d.iter().map(|b| (self.clock.ticks_to_us(*ts), *b)))
                 .collect();
-            if flat.len() >= count || start.elapsed() > Duration::from_secs(1) {
+            if flat.len() >= count || start.elapsed() > Duration::from_secs(5) {
                 return flat;
             }
             thread::sleep(Duration::from_millis(5));

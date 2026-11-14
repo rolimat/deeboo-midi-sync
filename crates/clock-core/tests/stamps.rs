@@ -76,13 +76,20 @@ fn due_extra_pulse_is_sent_before_the_next_pulse_when_no_tick_ran() {
 }
 
 #[test]
-fn clock_stamped_before_start_is_raised_to_start() {
+fn clock_stamped_before_play_is_not_forwarded() {
     let mut e = Engine::new(4.0);
     assert_eq!(
         e.on_command(T0 + 500, Command::Play).send,
         vec![tb(T0 + 500, 0xFA)]
     );
-    assert_eq!(e.on_midi(T0 + 450, &[0xF8]).send, vec![tb(T0 + 500, 0xF8)]);
+    assert_eq!(e.on_midi(T0 + 450, &[0xF8]).send, vec![]);
+    assert_eq!(
+        e.on_midi(T0 + 450 + IV, &[0xF8]).send,
+        vec![tb(T0 + 450 + IV, 0xF8)]
+    );
+    let s = e.state(T0 + 450 + IV);
+    assert_eq!(s.beat, Some(1));
+    assert!((s.bpm.unwrap() - 125.0).abs() < 0.05);
 }
 
 #[test]
