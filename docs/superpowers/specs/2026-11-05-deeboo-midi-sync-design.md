@@ -88,6 +88,8 @@ justo ahí, y afinar con ◀◀ / ▶▶.
 
 ### 5.3 Empuje fino ("vinilo")
 
+> Actualizado: reenvío con timestamps sobre `coremidi`, ver `2026-11-14-timestamped-forwarding-design.md`.
+
 - Mientras se **mantiene pulsado** ▶▶ (Push), el clock de salida va un **k %** más rápido
   que el de entrada; mientras se mantiene ◀◀ (Slow down), un k % más lento. `k` se configura
   en Settings, por defecto **4 %**, rango sugerido 1–10 %.
@@ -102,6 +104,8 @@ justo ahí, y afinar con ◀◀ / ▶▶.
   - El contador de beats cuenta **pulsos de salida**, por lo que refleja lo que ve el esclavo.
 
 ### 5.4 Medición de BPM
+
+> Actualizado: reenvío con timestamps sobre `coremidi`, ver `2026-11-14-timestamped-forwarding-design.md`.
 
 - BPM = 60 / (24 × intervalo medio entre `0xF8` entrantes), media móvil de los últimos
   24 intervalos (1 beat), mostrado con 1 decimal.
@@ -176,6 +180,8 @@ foco. Sin icono en el Dock (`ActivationPolicy::Accessory`).
 - Persistencia en JSON en el directorio de configuración de la app.
 
 ## 7. Stack técnico (decidido por el usuario)
+
+> Actualizado: reenvío con timestamps sobre `coremidi`, ver `2026-11-14-timestamped-forwarding-design.md`.
 
 - **Tauri 2** (Rust) para la app de barra de menú.
 - **`midir`** para MIDI (sustituye a mkmidilibrary tras la revisión: más madura, puertos
@@ -263,6 +269,8 @@ deben ir en Docker se ejecutan vía `docker compose run` si no se está ya dentr
    esclavo **no** arranca hasta pulsar Play en Deeboo.
 
 ### 10.1 Medición de jitter (acordado con el usuario)
+
+> Actualizado: reenvío con timestamps sobre `coremidi`, ver `2026-11-14-timestamped-forwarding-design.md`.
 
 Criterio principal: funciona bien con el esclavo real del usuario. Además, el plan incluye una
 **herramienta de medición** (binario de desarrollo, macOS) que registra los intervalos entre

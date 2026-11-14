@@ -24,10 +24,25 @@ pub enum Command {
     SetNudgeStrength(f64),
 }
 
-/// Bytes to write to Out, in order.
+/// One byte for Out and its timestamp (µs, the engine's clock).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TimedByte {
+    pub at_us: u64,
+    pub byte: u8,
+}
+
+/// Bytes to write to Out, in order; stamps never decrease.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Output {
-    pub send: Vec<u8>,
+    pub send: Vec<TimedByte>,
+}
+
+impl Output {
+    /// The bytes without their stamps.
+    #[must_use]
+    pub fn bytes(&self) -> Vec<u8> {
+        self.send.iter().map(|t| t.byte).collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -58,6 +73,8 @@ pub struct Engine {
     nudge: Option<Direction>,
     /// When the inserted extra pulse is due.
     pending_extra_us: Option<u64>,
+    /// Stamp of the last output byte; later bytes are never stamped earlier.
+    last_out_us: u64,
 }
 
 impl Engine {
@@ -82,7 +99,20 @@ impl Engine {
             nudge_acc: 0,
             nudge: None,
             pending_extra_us: None,
+            last_out_us: 0,
         }
+    }
+
+    fn emit(&mut self, out: &mut Output, at_us: u64, byte: u8) {
+        let at_us = at_us.max(self.last_out_us);
+        self.last_out_us = at_us;
+        out.send.push(TimedByte { at_us, byte });
+    }
+
+    fn one(&mut self, at_us: u64, byte: u8) -> Output {
+        let mut out = Output::default();
+        self.emit(&mut out, at_us, byte);
+        out
     }
 
     /// Scans every byte of a packet; only `0xF8` and `0xFC` have an effect.
@@ -93,14 +123,16 @@ impl Engine {
             match b {
                 CLOCK => {
                     self.on_clock(now_us);
-                    if self.playing && self.nudge_forwards(now_us) {
+                    // A pulse stamped before Play happened before it: measured, never forwarded.
+                    if self.playing && now_us >= self.play_started_us && self.nudge_forwards(now_us)
+                    {
                         self.out_pulses += 1;
-                        out.send.push(CLOCK);
+                        self.emit(&mut out, now_us, CLOCK);
                     }
                 }
                 STOP if self.playing => {
                     self.pause();
-                    out.send.push(STOP);
+                    self.emit(&mut out, now_us, STOP);
                 }
                 _ => {}
             }
@@ -153,11 +185,11 @@ impl Engine {
                 self.playing = true;
                 self.play_started_us = now_us;
                 self.out_pulses = 0;
-                Output { send: vec![START] }
+                self.one(now_us, START)
             }
             Command::Pause if self.playing => {
                 self.pause();
-                Output { send: vec![STOP] }
+                self.one(now_us, STOP)
             }
             Command::NudgeStart(d) if self.playing => {
                 self.nudge = Some(d);
@@ -184,12 +216,12 @@ impl Engine {
     pub fn on_tick(&mut self, now_us: u64) -> Output {
         if self.loss_deadline_us().is_some_and(|d| now_us > d) {
             self.pause();
-            return Output { send: vec![STOP] };
+            return self.one(now_us, STOP);
         }
-        if self.pending_extra_us.is_some_and(|p| p <= now_us) {
+        if let Some(due) = self.pending_extra_us.filter(|&p| p <= now_us) {
             self.pending_extra_us = None;
             self.out_pulses += 1;
-            return Output { send: vec![CLOCK] };
+            return self.one(due, CLOCK);
         }
         Output::default()
     }

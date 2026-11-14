@@ -5,6 +5,7 @@ just precommit   # fmt-check + lint + tests, inside Docker (the pre-commit hook 
 just fmt         # format Rust + UI
 just test        # Rust + Vitest tests (Docker)
 just lint        # clippy -D warnings, cargo-deny, hadolint, eslint, tsc, agent-docs budget
+just check-macos # macOS host: clippy + all tests incl. real-CoreMIDI e2e
 just dev         # macOS host: run the app with real MIDI (hot reload)
 just dmg         # macOS host: build the .dmg (use CI=true in non-GUI sessions)
 just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measure clock jitter
@@ -20,10 +21,10 @@ just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measu
 
 # Architecture
 
-- macOS menu bar app: Tauri 2 + Rust + midir; UI in TypeScript + Vite, plain CSS (no frameworks).
+- macOS menu bar app: Tauri 2 + Rust + coremidi; UI in TypeScript + Vite, plain CSS (no frameworks).
 - `crates/clock-core/`: pure, deterministic clock engine (parser, BPM, transport, nudge). No I/O, no real time.
-- `src-tauri/`: midir virtual ports bridge, timer thread, settings, Tauri commands, tray.
-- `ui/`: popover and settings views. `tools/jitter-probe/`: jitter measurement binary.
+- `src-tauri/`: coremidi virtual ports bridge, timer thread, settings, Tauri commands, tray.
+- `ui/`: popover and settings views. `tools/jitter-probe/`: jitter probe (the only user of `midir`).
 - Everything except real MIDI, the DMG and the jitter probe runs in Docker.
 
 # Golden rules
@@ -32,7 +33,7 @@ just jitter --seconds 60 --connect "Deeboo Clock Sync Out"   # macOS host: measu
 - Ports: `Deeboo Clock Sync In` (virtual destination) / `Deeboo Clock Sync Out` (virtual source).
 - Only Deeboo's Play starts the slave; incoming Start/Continue/SPP are never forwarded.
   Incoming Stop or 500 ms without clock while playing → one `Stop`, pause.
-- One monotonic µs clock feeds `clock-core`; never mix in midir timestamps.
+- One clock: CoreMIDI host time in µs. A packet's stamp is its event time for `clock-core` and is kept when forwarding.
 - Never `--no-verify`. Never write DOM under the pointer on every state tick.
 
 # Documentation

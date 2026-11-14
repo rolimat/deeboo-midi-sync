@@ -9,7 +9,7 @@ Spec §9: [docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md](../../.
 
 ## Where things run
 - Docker (image `deeboo-dev`, Rust 1.99.1, Node, `just`, cargo-deny, hadolint): fmt, lint, tests. Recipes re-exec through `docker compose run --rm dev just <recipe>` when `DEEBOO_IN_CONTAINER` is unset, so run them from the host as usual.
-- macOS host only: `just dev`, `just dmg`, `just jitter` (need CoreMIDI and macOS bundles). They exit with an error elsewhere. They prepend `$HOME/.cargo/bin` to PATH themselves (rustup is installed with `--no-modify-path`).
+- macOS host only: `just check-macos`, `just dev`, `just dmg`, `just jitter` (need CoreMIDI and macOS bundles). They exit with an error elsewhere. They prepend `$HOME/.cargo/bin` to PATH themselves (rustup is installed with `--no-modify-path`).
 
 ## Recipes
 | Recipe | Does |
@@ -18,6 +18,7 @@ Spec §9: [docs/superpowers/specs/2026-11-05-deeboo-midi-sync-design.md](../../.
 | `just lint` | clippy `-D warnings`, `cargo deny`, hadolint, `scripts/check-agent-docs.sh`, UI eslint + typecheck |
 | `just test` | `cargo test --workspace`; Vitest when `ui/package.json` exists |
 | `just precommit` (`check`) | fmt-check + lint + test |
+| `just check-macos` | macOS only: clippy `-D warnings` + `cargo test --workspace` on the host, including `coremidi_e2e` against the real CoreMIDI server (Docker only compiles the MIDI stub) |
 | `just dev` / `just dmg` | macOS only: `npm --prefix ui run tauri dev` / `tauri build -- --bundles dmg` (run `npm ci` first if `ui/node_modules` is missing) |
 | `just ui-dist` | builds `ui/dist`; `lint` and `test` run it first because `tauri::generate_context!` needs it |
 | `just jitter --seconds 30 [--port-name N \| --connect N]` | macOS only: run `tools/jitter-probe`; `--port-name` makes a virtual destination (direct run), `--connect` attaches to an existing source such as `Deeboo Clock Sync Out` (via-Deeboo run); see README "Measuring jitter" |

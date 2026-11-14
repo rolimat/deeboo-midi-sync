@@ -3,6 +3,9 @@
 mod bridge;
 mod clock;
 mod commands;
+#[cfg(all(test, target_os = "macos"))]
+mod coremidi_e2e;
+mod midi;
 mod settings;
 mod tray;
 

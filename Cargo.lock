@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "clock-core"
-version = "1.0.0"
+version = "1.1.0"
 
 [[package]]
 name = "colorchoice"
@@ -630,12 +630,12 @@ dependencies = [
 
 [[package]]
 name = "deeboo-midi-sync"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "clock-core",
+ "coremidi",
  "env_logger",
  "log",
- "midir",
  "serde",
  "serde_json",
  "tauri",
@@ -1751,7 +1751,7 @@ dependencies = [
 
 [[package]]
 name = "jitter-probe"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "midir",
 ]

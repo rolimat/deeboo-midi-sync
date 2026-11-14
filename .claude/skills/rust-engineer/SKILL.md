@@ -18,8 +18,8 @@ Senior Rust engineer: idiomatic, memory-safe, zero-cost abstractions, ownership-
 - Edition 2024, clippy pedantic via workspace lints, CI runs `-D warnings`. Allow a lint only with a one-line reason.
 - No `unwrap`/`expect` outside tests. Log (`log::error!`/`warn!`) or return errors; never panic in MIDI callbacks or port setup.
 - No async/tokio: the app uses `std::thread` + `Mutex`. Do not add an async runtime.
-- `clock-core` is pure: no I/O, no system clock, no threads, no `midir`/`tauri`. API and how to extend it: [references/deeboo-clock-core.md](references/deeboo-clock-core.md).
-- `src-tauri`: one monotonic µs clock, lock order engine→out, send under the engine lock, commands snake_case / DTOs camelCase / event `deeboo://state`: [references/deeboo-tauri-app.md](references/deeboo-tauri-app.md).
+- `clock-core` is pure: no I/O, no system clock, no threads, no `coremidi`/`tauri`. API and how to extend it: [references/deeboo-clock-core.md](references/deeboo-clock-core.md).
+- `src-tauri`: `coremidi` ports (`midi.rs`, stub off macOS), one CoreMIDI host-time µs clock, stamps kept when forwarding, lock order engine→out, send under the engine lock, commands snake_case / DTOs camelCase / event `deeboo://state`: [references/deeboo-tauri-app.md](references/deeboo-tauri-app.md).
 - Dependencies must pass `cargo deny` (GPL-3.0 compatible).
 - Docs: one-line `///` on public items; doctests only where an example clarifies.
 

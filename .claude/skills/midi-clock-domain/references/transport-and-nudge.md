@@ -15,7 +15,8 @@ on each incoming 0xF8:
         acc -= 10_000
         Push: forward this pulse, pending_extra = now + interval_us / 2   (skip if interval unknown)
         Slow: drop this pulse (not forwarded, not counted)
-on_tick(now): if pending_extra <= now -> send 0xF8, count it, clear pending_extra
+on_tick(now): if pending_extra <= now -> send 0xF8 stamped at pending_extra (not now), count it, clear pending_extra
+(forwarded bytes keep the packet time given to on_midi; output stamps never decrease; a pulse stamped before Play is not forwarded)
 NudgeStop: acc = 0; an already pending extra pulse still fires
 Pause / incoming Stop / clock loss: clear pending_extra and acc, nudge = None
 SetNudgeStrength(p): outside 1.0..=10.0 is ignored, previous value kept

@@ -1,14 +1,13 @@
-//! Virtual MIDI ports wired to the clock engine, plus the timer thread.
+//! Virtual `CoreMIDI` ports wired to the clock engine, plus the timer thread.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, Weak};
 use std::thread;
 use std::time::Duration;
 
+use crate::clock::{HostClock, event_time_us};
+use crate::midi::{MidiClient, MidiIn, MidiOut};
 use clock_core::{Command, Engine, Output, State};
-use midir::{Ignore, MidiInput, MidiInputConnection, MidiOutput, MidiOutputConnection};
-
-use crate::clock::MonoClock;
 
 const CLIENT_NAME: &str = "Deeboo MIDI Sync";
 const MAX_SLEEP: Duration = Duration::from_millis(5);
@@ -23,13 +22,14 @@ pub struct BridgeSnapshot {
 /// State shared with the MIDI callback and the timer thread.
 struct Shared {
     engine: Mutex<Engine>,
-    out: Mutex<Option<MidiOutputConnection>>,
-    clock: MonoClock,
+    out: Mutex<Option<MidiOut>>,
+    clock: HostClock,
 }
 
 struct Inner {
     shared: Arc<Shared>,
-    in_conn: Mutex<Option<MidiInputConnection<()>>>,
+    client: Option<MidiClient>,
+    in_port: Mutex<Option<MidiIn>>,
     in_ok: AtomicBool,
     out_ok: AtomicBool,
 }
@@ -54,18 +54,23 @@ impl Shared {
         if output.send.is_empty() {
             return;
         }
-        let mut guard = lock(&self.out);
-        if let Some(conn) = guard.as_mut() {
-            for b in &output.send {
-                if let Err(e) = conn.send(&[*b]) {
-                    log::warn!("cannot write to Out: {e}");
-                }
+        let guard = lock(&self.out);
+        if let Some(out) = guard.as_ref() {
+            let packets: Vec<(u64, u8)> = output
+                .send
+                .iter()
+                .map(|b| (self.clock.us_to_ticks(b.at_us), b.byte))
+                .collect();
+            if let Err(e) = out.send(&packets) {
+                log::warn!("cannot write to Out: {e}");
             }
         }
     }
 
-    fn on_midi(&self, msg: &[u8]) {
-        self.run(|e, now| e.on_midi(now, msg));
+    /// `stamp_ticks` is the packet's host-time stamp; 0 means "unstamped".
+    fn on_packet(&self, stamp_ticks: u64, msg: &[u8]) {
+        let stamp_us = (stamp_ticks != 0).then(|| self.clock.ticks_to_us(stamp_ticks));
+        self.run(|e, now| e.on_midi(event_time_us(stamp_us, now), msg));
     }
 
     fn on_tick(&self) {
@@ -102,66 +107,6 @@ fn spawn_timer(shared: &Arc<Shared>) {
     }
 }
 
-#[cfg(unix)]
-fn open_input(name: &str, shared: &Arc<Shared>) -> Option<MidiInputConnection<()>> {
-    use midir::os::unix::VirtualInput;
-
-    let mut input = match MidiInput::new(CLIENT_NAME) {
-        Ok(i) => i,
-        Err(e) => {
-            log::error!("cannot create MIDI input client: {e}");
-            return None;
-        }
-    };
-    input.ignore(Ignore::None);
-    let cb_shared = Arc::clone(shared);
-    match input.create_virtual(name, move |_ts, msg, ()| cb_shared.on_midi(msg), ()) {
-        Ok(conn) => {
-            log::info!("virtual input '{name}' created");
-            Some(conn)
-        }
-        Err(e) => {
-            log::error!("cannot create virtual input '{name}': {e}");
-            None
-        }
-    }
-}
-
-#[cfg(not(unix))]
-fn open_input(_name: &str, _shared: &Arc<Shared>) -> Option<MidiInputConnection<()>> {
-    log::error!("virtual MIDI ports are not supported on this platform");
-    None
-}
-
-#[cfg(unix)]
-fn open_output(name: &str) -> Option<MidiOutputConnection> {
-    use midir::os::unix::VirtualOutput;
-
-    let output = match MidiOutput::new(CLIENT_NAME) {
-        Ok(o) => o,
-        Err(e) => {
-            log::error!("cannot create MIDI output client: {e}");
-            return None;
-        }
-    };
-    match output.create_virtual(name) {
-        Ok(conn) => {
-            log::info!("virtual output '{name}' created");
-            Some(conn)
-        }
-        Err(e) => {
-            log::error!("cannot create virtual output '{name}': {e}");
-            None
-        }
-    }
-}
-
-#[cfg(not(unix))]
-fn open_output(_name: &str) -> Option<MidiOutputConnection> {
-    log::error!("virtual MIDI ports are not supported on this platform");
-    None
-}
-
 impl Bridge {
     /// Never panics: port failures are logged and reported through the snapshot flags.
     #[must_use]
@@ -169,12 +114,16 @@ impl Bridge {
         let shared = Arc::new(Shared {
             engine: Mutex::new(Engine::new(nudge_pct)),
             out: Mutex::new(None),
-            clock: MonoClock::new(),
+            clock: HostClock::new(),
         });
+        let client = MidiClient::new(CLIENT_NAME)
+            .inspect_err(|e| log::error!("{e}"))
+            .ok();
         let bridge = Bridge {
             inner: Arc::new(Inner {
                 shared: Arc::clone(&shared),
-                in_conn: Mutex::new(None),
+                client,
+                in_port: Mutex::new(None),
                 in_ok: AtomicBool::new(false),
                 out_ok: AtomicBool::new(false),
             }),
@@ -186,12 +135,23 @@ impl Bridge {
 
     fn open_ports(&self, in_name: &str, out_name: &str) {
         let inner = &self.inner;
-        let out = open_output(out_name);
+        let out = inner.client.as_ref().and_then(|c| {
+            c.open_output(out_name)
+                .inspect(|_| log::info!("virtual output '{out_name}' created"))
+                .inspect_err(|e| log::error!("{e}"))
+                .ok()
+        });
         inner.out_ok.store(out.is_some(), Ordering::Relaxed);
         *lock(&inner.shared.out) = out;
-        let input = open_input(in_name, &inner.shared);
+        let cb_shared = Arc::clone(&inner.shared);
+        let input = inner.client.as_ref().and_then(|c| {
+            c.open_input(in_name, move |ts, msg| cb_shared.on_packet(ts, msg))
+                .inspect(|_| log::info!("virtual input '{in_name}' created"))
+                .inspect_err(|e| log::error!("{e}"))
+                .ok()
+        });
         inner.in_ok.store(input.is_some(), Ordering::Relaxed);
-        *lock(&inner.in_conn) = input;
+        *lock(&inner.in_port) = input;
     }
 
     pub fn command(&self, cmd: Command) {
@@ -211,8 +171,22 @@ impl Bridge {
 
     /// Drops both connections and recreates them under the new names; engine state is kept.
     pub fn rename_ports(&self, in_name: &str, out_name: &str) {
-        drop(lock(&self.inner.in_conn).take());
-        drop(lock(&self.inner.shared.out).take());
+        *lock(&self.inner.in_port) = None;
+        *lock(&self.inner.shared.out) = None;
         self.open_ports(in_name, out_name);
+    }
+}
+
+#[cfg(all(test, not(target_os = "macos")))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn without_coremidi_ports_report_down_and_commands_still_work() {
+        let bridge = Bridge::start("a", "b", 4.0);
+        let snap = bridge.snapshot();
+        assert!(!snap.in_port_ok && !snap.out_port_ok);
+        bridge.command(Command::Play);
+        assert!(bridge.snapshot().state.playing);
     }
 }

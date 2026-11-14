@@ -3,7 +3,7 @@
 Tests drive `Engine` with explicit `now_us`; nothing reads a clock.
 
 ## Helpers (`crates/clock-core/tests/common/mod.rs`)
-- `clock_pulses(e: &mut Engine, start_us: u64, n: u64, interval_us: u64) -> Vec<u8>` feeds `n` x `[0xF8]` spaced by `interval_us` and returns all output bytes concatenated.
+- `clock_pulses(e: &mut Engine, start_us: u64, n: u64, interval_us: u64) -> Vec<u8>` feeds `n` x `[0xF8]` spaced by `interval_us` and returns all output bytes concatenated. Helpers use `Output::bytes()`; to assert stamps compare `.send` with `TimedByte { at_us, byte }`, e.g. `assert_eq!(e.on_midi(t, &[0xF8]).send, vec![TimedByte { at_us: t, byte: 0xF8 }])`. Forwarded bytes keep the packet time.
 - `run_with_ticks(e, start, n, interval) -> u64` feeds `n` input pulses and returns the count of output `0xF8`. Before each next input pulse it fires `on_tick` at every deadline strictly before that pulse time; after the last input it treats the next pulse time as `last + interval`.
 
 ## Numbers

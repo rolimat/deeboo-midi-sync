@@ -1,18 +1,18 @@
 mod common;
 
-use clock_core::{Command, Engine, Output};
+use clock_core::{Command, Engine};
 use common::clock_pulses;
 
 fn playing_engine() -> Engine {
     let mut e = Engine::new(4.0);
-    assert_eq!(e.on_command(0, Command::Play).send, vec![0xFA]);
+    assert_eq!(e.on_command(0, Command::Play).bytes(), vec![0xFA]);
     e
 }
 
 #[test]
 fn play_sends_start_then_forwards_clock() {
     let mut e = Engine::new(4.0);
-    assert_eq!(e.on_command(0, Command::Play).send, vec![0xFA]);
+    assert_eq!(e.on_command(0, Command::Play).bytes(), vec![0xFA]);
     assert_eq!(clock_pulses(&mut e, 0, 3, 20_000), vec![0xF8; 3]);
     assert_eq!(e.state(60_000).beat, Some(1));
 }
@@ -28,7 +28,7 @@ fn beat_counter_wraps_every_four_beats() {
 fn pause_sends_stop_and_halts_forwarding() {
     let mut e = playing_engine();
     clock_pulses(&mut e, 0, 5, 20_000);
-    assert_eq!(e.on_command(100_000, Command::Pause).send, vec![0xFC]);
+    assert_eq!(e.on_command(100_000, Command::Pause).bytes(), vec![0xFC]);
     assert_eq!(clock_pulses(&mut e, 120_000, 3, 20_000), Vec::<u8>::new());
     assert_eq!(e.state(180_000).beat, None);
 }
@@ -36,31 +36,31 @@ fn pause_sends_stop_and_halts_forwarding() {
 #[test]
 fn repeated_play_or_pause_is_noop() {
     let mut e = Engine::new(4.0);
-    assert_eq!(e.on_command(0, Command::Pause).send, Vec::<u8>::new());
+    assert_eq!(e.on_command(0, Command::Pause).bytes(), Vec::<u8>::new());
     e.on_command(0, Command::Play);
-    assert_eq!(e.on_command(10, Command::Play).send, Vec::<u8>::new());
+    assert_eq!(e.on_command(10, Command::Play).bytes(), Vec::<u8>::new());
     e.on_command(20, Command::Pause);
-    assert_eq!(e.on_command(30, Command::Pause).send, Vec::<u8>::new());
+    assert_eq!(e.on_command(30, Command::Pause).bytes(), Vec::<u8>::new());
 }
 
 #[test]
 fn incoming_stop_forwards_and_pauses() {
     let mut e = playing_engine();
-    assert_eq!(e.on_midi(10, &[0xFC]), Output { send: vec![0xFC] });
+    assert_eq!(e.on_midi(10, &[0xFC]).bytes(), vec![0xFC]);
     assert!(!e.state(10).playing);
 }
 
 #[test]
 fn incoming_stop_while_paused_is_not_forwarded() {
     let mut e = Engine::new(4.0);
-    assert_eq!(e.on_midi(10, &[0xFC]).send, Vec::<u8>::new());
+    assert_eq!(e.on_midi(10, &[0xFC]).bytes(), Vec::<u8>::new());
 }
 
 #[test]
 fn incoming_start_continue_spp_never_forwarded() {
     let mut e = playing_engine();
     for packet in [&[0xFA][..], &[0xFB], &[0xF2, 0x10, 0x00]] {
-        assert_eq!(e.on_midi(10, packet).send, Vec::<u8>::new());
+        assert_eq!(e.on_midi(10, packet).bytes(), Vec::<u8>::new());
         assert!(e.state(10).playing);
     }
 }
@@ -80,9 +80,9 @@ fn clock_loss_while_playing_sends_single_stop() {
     clock_pulses(&mut e, 0, 10, 20_000);
     let t = 9 * 20_000;
     assert_eq!(e.next_deadline_us(), Some(t + 500_000));
-    assert_eq!(e.on_tick(t + 500_000).send, Vec::<u8>::new());
-    assert_eq!(e.on_tick(t + 500_001).send, vec![0xFC]);
-    assert_eq!(e.on_tick(t + 600_000).send, Vec::<u8>::new());
+    assert_eq!(e.on_tick(t + 500_000).bytes(), Vec::<u8>::new());
+    assert_eq!(e.on_tick(t + 500_001).bytes(), vec![0xFC]);
+    assert_eq!(e.on_tick(t + 600_000).bytes(), Vec::<u8>::new());
     assert!(!e.state(t + 600_000).playing);
     assert_eq!(e.next_deadline_us(), None);
 }
@@ -92,7 +92,7 @@ fn clock_loss_measured_from_play_when_no_clock_arrived() {
     let mut e = Engine::new(4.0);
     e.on_command(1_000, Command::Play);
     assert_eq!(e.next_deadline_us(), Some(501_000));
-    assert_eq!(e.on_tick(501_001).send, vec![0xFC]);
+    assert_eq!(e.on_tick(501_001).bytes(), vec![0xFC]);
 }
 
 #[test]

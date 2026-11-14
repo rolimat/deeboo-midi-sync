@@ -3,7 +3,7 @@
 mod bpm;
 mod engine;
 
-pub use engine::{Command, Direction, Engine, Output, State};
+pub use engine::{Command, Direction, Engine, Output, State, TimedByte};
 
 /// MIDI clock pulses per quarter note.
 pub const PPQN: u64 = 24;

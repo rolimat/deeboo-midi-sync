@@ -67,7 +67,7 @@ fn signal_loss_during_push_cancels_pending_pulse() {
     }
     let last = T0 + 24 * IV;
     assert_eq!(e.next_deadline_us(), Some(last + 10_000));
-    assert_eq!(e.on_tick(last + 500_001).send, vec![0xFC]);
+    assert_eq!(e.on_tick(last + 500_001).bytes(), vec![0xFC]);
     assert_eq!(e.on_tick(last + 600_000), Output::default());
     assert_eq!(e.next_deadline_us(), None);
 }
