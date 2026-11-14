@@ -59,7 +59,7 @@ impl Shared {
             let packets: Vec<(u64, u8)> = output
                 .send
                 .iter()
-                .map(|b| (self.clock.us_to_ticks(b.at_us), b.byte))
+                .map(|b| (self.clock.timebase.us_to_ticks(b.at_us), b.byte))
                 .collect();
             if let Err(e) = out.send(&packets) {
                 log::warn!("cannot write to Out: {e}");
@@ -69,7 +69,7 @@ impl Shared {
 
     /// `stamp_ticks` is the packet's host-time stamp; 0 means "unstamped".
     fn on_packet(&self, stamp_ticks: u64, msg: &[u8]) {
-        let stamp_us = (stamp_ticks != 0).then(|| self.clock.ticks_to_us(stamp_ticks));
+        let stamp_us = (stamp_ticks != 0).then(|| self.clock.timebase.ticks_to_us(stamp_ticks));
         self.run(|e, now| e.on_midi(event_time_us(stamp_us, now), msg));
     }
 
