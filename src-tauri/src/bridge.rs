@@ -8,7 +8,7 @@ use std::time::Duration;
 use clock_core::{Command, Engine, Output, State};
 use midir::{Ignore, MidiInput, MidiInputConnection, MidiOutput, MidiOutputConnection};
 
-use crate::clock::MonoClock;
+use crate::clock::HostClock;
 
 const CLIENT_NAME: &str = "Deeboo MIDI Sync";
 const MAX_SLEEP: Duration = Duration::from_millis(5);
@@ -24,7 +24,7 @@ pub struct BridgeSnapshot {
 struct Shared {
     engine: Mutex<Engine>,
     out: Mutex<Option<MidiOutputConnection>>,
-    clock: MonoClock,
+    clock: HostClock,
 }
 
 struct Inner {
@@ -169,7 +169,7 @@ impl Bridge {
         let shared = Arc::new(Shared {
             engine: Mutex::new(Engine::new(nudge_pct)),
             out: Mutex::new(None),
-            clock: MonoClock::new(),
+            clock: HostClock::new(),
         });
         let bridge = Bridge {
             inner: Arc::new(Inner {

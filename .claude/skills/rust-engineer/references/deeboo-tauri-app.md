@@ -16,9 +16,12 @@ engine → out; `rename_ports` never takes the engine lock. A failed port creati
 clears that port's ok flag; it never panics.
 
 ## Time base
-One monotonic clock (`Instant` since app start, in µs, `MonoClock`) feeds `clock-core` for every
-callback and timer event. midir timestamps are not mixed in: two clocks break deadline and
-signal-loss arithmetic. Only the jitter probe uses midir/CoreMIDI timestamps, on purpose.
+One clock, `HostClock`: CoreMIDI host time (`mach_absolute_time`) in µs, feeding `clock-core` for
+every callback and timer event. CoreMIDI event stamps are the same clock, so they can be used
+directly (see `event_time_us`: stamps in the future or older than the signal timeout fall back to
+now). `Timebase` converts ticks to µs rounding down and µs to ticks rounding up, so
+`us_to_ticks(ticks_to_us(t)) <= t` (a stamp never lands after now). Off macOS the ticks are
+nanoseconds since an `Instant`.
 
 ## Timer thread
 Sleeps until `min(next_deadline_us, now + 5 ms)`, then `on_tick(now)` and sends the result.
