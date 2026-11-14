@@ -16,7 +16,7 @@ bridge against the real CoreMIDI server; run it with `just check-macos`.
 Shared state: `Arc<Mutex<Engine>>` and `Mutex<Option<MidiOut>>`. The input callback gets each packet as
 `(stamp ticks, bytes)` and calls `Shared::on_packet`: a non-zero stamp becomes µs and
 `e.on_midi(event_time_us(stamp, now), bytes)` runs through `Shared::run`, which maps
-`Output.send` to `(us_to_ticks(at_us), byte)` and writes them with one `MidiOut::send` while still
+`Output.send` to `(clock.timebase.us_to_ticks(at_us), byte)` and writes them with one `MidiOut::send` while still
 holding the engine lock, so bytes leave in engine order. `command()` and the timer thread use `run` too.
 Lock order is always engine → out; `rename_ports` never takes the engine lock. A failed client or port
 logs `log::error!` and clears that port's ok flag; it never panics. A failed send logs `log::warn!`.
@@ -25,7 +25,8 @@ logs `log::error!` and clears that port's ok flag; it never panics. A failed sen
 One clock, `HostClock`: CoreMIDI host time (`mach_absolute_time`) in µs, feeding `clock-core` for
 every callback and timer event. CoreMIDI packet stamps are the same clock, so they are used
 directly and re-emitted on Out (see `event_time_us`: stamps in the future or older than the signal timeout fall back to
-now). `Timebase` converts ticks to µs rounding down and µs to ticks rounding up, so
+now). Conversions live only on `Timebase` (`clock.timebase`, no wrappers on `HostClock`): ticks to µs
+round down and µs to ticks round up, so
 `us_to_ticks(ticks_to_us(t)) <= t` (a stamp never lands after now). Off macOS the ticks are
 nanoseconds since an `Instant`.
 

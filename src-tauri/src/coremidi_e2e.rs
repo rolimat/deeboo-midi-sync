@@ -83,7 +83,7 @@ impl Harness {
 
     fn send_at(&self, at_us: u64, bytes: &[u8]) {
         self.sleep_until(at_us);
-        let buf = PacketBuffer::new(self.clock.us_to_ticks(at_us), bytes);
+        let buf = PacketBuffer::new(self.clock.timebase.us_to_ticks(at_us), bytes);
         self.port.send(&self.dest, &buf).expect("send");
     }
 
@@ -108,7 +108,7 @@ impl Harness {
                 .lock()
                 .unwrap()
                 .iter()
-                .flat_map(|(ts, d)| d.iter().map(|b| (self.clock.ticks_to_us(*ts), *b)))
+                .flat_map(|(ts, d)| d.iter().map(|b| (self.clock.timebase.ticks_to_us(*ts), *b)))
                 .collect();
             if flat.len() >= count || start.elapsed() > Duration::from_secs(5) {
                 return flat;
@@ -187,8 +187,8 @@ fn packets_in_one_list_keep_their_own_stamps() {
     thread::sleep(Duration::from_millis(5));
     let now = h.clock.now_us();
     let (a, b) = (now - 2_000, now - 1_000);
-    let mut buf = PacketBuffer::new(h.clock.us_to_ticks(a), &[0xF8]);
-    buf.push_data(h.clock.us_to_ticks(b), &[0xF8]);
+    let mut buf = PacketBuffer::new(h.clock.timebase.us_to_ticks(a), &[0xF8]);
+    buf.push_data(h.clock.timebase.us_to_ticks(b), &[0xF8]);
     h.port.send(&h.dest, &buf).expect("send");
     let got = h.bytes(3);
     let pulses: Vec<u64> = got

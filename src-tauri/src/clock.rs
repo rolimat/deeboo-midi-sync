@@ -44,7 +44,8 @@ mod sys {
 /// Host time in microseconds. `CoreMIDI` packet stamps share this clock.
 #[derive(Debug, Clone, Copy)]
 pub struct HostClock {
-    timebase: Timebase,
+    /// Converts this clock's ticks, and `CoreMIDI` packet stamps, to µs and back.
+    pub timebase: Timebase,
     #[cfg(not(target_os = "macos"))]
     start: std::time::Instant,
 }
@@ -93,16 +94,6 @@ impl HostClock {
     #[must_use]
     pub fn now_us(self) -> u64 {
         self.timebase.ticks_to_us(self.now_ticks())
-    }
-
-    #[must_use]
-    pub fn ticks_to_us(self, ticks: u64) -> u64 {
-        self.timebase.ticks_to_us(ticks)
-    }
-
-    #[must_use]
-    pub fn us_to_ticks(self, us: u64) -> u64 {
-        self.timebase.us_to_ticks(us)
     }
 }
 
