@@ -61,6 +61,16 @@ precommit:
 
 check: precommit
 
+check-macos:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ "$(uname)" = Darwin ] || { echo "just check-macos runs on the macOS host only" >&2; exit 1; }
+    export PATH="$HOME/.cargo/bin:$PATH"
+    if [ ! -f ui/node_modules/.bin/vite ]; then npm --prefix ui ci; fi
+    npm --prefix ui run build
+    cargo clippy --workspace --all-targets -- -D warnings
+    cargo test --workspace
+
 dev:
     #!/usr/bin/env bash
     set -euo pipefail

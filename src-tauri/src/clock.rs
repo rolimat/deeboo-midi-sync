@@ -20,7 +20,6 @@ impl Timebase {
 
     /// Microseconds to ticks, rounding up, so a round trip never loses the microsecond.
     #[must_use]
-    #[allow(dead_code)] // used by the timestamped forwarding in the next task
     pub fn us_to_ticks(self, us: u64) -> u64 {
         let num = u128::from(us) * 1000 * u128::from(self.denom);
         let numer = u128::from(self.numer);
@@ -42,7 +41,7 @@ mod sys {
     }
 }
 
-/// Host time in microseconds. midir/CoreMIDI timestamps share this clock.
+/// Host time in microseconds. `CoreMIDI` packet stamps share this clock.
 #[derive(Debug, Clone, Copy)]
 pub struct HostClock {
     timebase: Timebase,
@@ -97,13 +96,11 @@ impl HostClock {
     }
 
     #[must_use]
-    #[allow(dead_code)] // used by the timestamped forwarding in the next task
     pub fn ticks_to_us(self, ticks: u64) -> u64 {
         self.timebase.ticks_to_us(ticks)
     }
 
     #[must_use]
-    #[allow(dead_code)] // used by the timestamped forwarding in the next task
     pub fn us_to_ticks(self, us: u64) -> u64 {
         self.timebase.us_to_ticks(us)
     }
@@ -118,7 +115,6 @@ impl Default for HostClock {
 /// The master's stamp when it is plausible (not in the future, not older than the signal
 /// timeout); otherwise `now_us`.
 #[must_use]
-#[allow(dead_code)] // used by the timestamped forwarding in the next task
 pub fn event_time_us(stamp_us: Option<u64>, now_us: u64) -> u64 {
     match stamp_us {
         Some(s) if s <= now_us && now_us - s <= SIGNAL_TIMEOUT_US => s,

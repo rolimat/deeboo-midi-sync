@@ -9,5 +9,6 @@
 ## macOS host
 - `ui/node_modules` on the host is separate from the Docker volume. The `tauri` npm script runs the CLI from the repo root so it finds `src-tauri/tauri.conf.json`.
 - Needs the Rust toolchain, Node and `just` installed on the host, plus `lefthook install` for the hook (the hook itself runs `just precommit` in Docker).
+- `just check-macos` runs clippy and every test on the host, including the CoreMIDI end-to-end tests (`src-tauri/src/coremidi_e2e.rs`) that Docker cannot run: there `midi.rs` is the stub and `Bridge` reports both ports down. Run it before a PR that touches `src-tauri`. `tools/jitter-probe` still uses `midir`, which is why the image keeps `libasound2-dev`.
 - `just dev` runs the app with real MIDI; `just dmg` builds the `.dmg`; `just jitter` runs the jitter probe. Run from the host, never inside the container (Docker on a Mac is Linux: no CoreMIDI, no bundles).
 - Manual acceptance tests: spec §10.

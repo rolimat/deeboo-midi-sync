@@ -633,9 +633,9 @@ name = "deeboo-midi-sync"
 version = "1.0.0"
 dependencies = [
  "clock-core",
+ "coremidi",
  "env_logger",
  "log",
- "midir",
  "serde",
  "serde_json",
  "tauri",
