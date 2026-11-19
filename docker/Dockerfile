@@ -1,4 +1,4 @@
-FROM rust:1.99.1-bookworm
+FROM rust:1.100.0-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
